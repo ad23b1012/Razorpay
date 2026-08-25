@@ -1,0 +1,23 @@
+# Secrets — never commit these
+.env
+backend/.env
+frontend/.env
+*.env.local
+
+# Local databases
+backend/razoragent.db
+backend/tests/test_razoragent.db
+*.db-journal
+
+# Python
+__pycache__/
+*.py[cod]
+backend/venv/
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store

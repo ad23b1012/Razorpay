@@ -1,0 +1,397 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Razorpay Official Enterprise Design Tokens */
+  --rzp-blue: #2563EB;
+  --rzp-blue-hover: #1D4ED8;
+  --rzp-blue-light: #EFF6FF;
+  --rzp-blue-subtle: #DBEAFE;
+  --rzp-blue-glow: rgba(37, 99, 235, 0.12);
+  
+  --rzp-navy: #0D121F;
+  --rzp-navy-light: #1E293B;
+  --rzp-dark-card: #0A0F1D;
+  --rzp-dark-border: #1E293B;
+  
+  --rzp-mint: #059669;
+  --rzp-mint-light: #ECFDF5;
+  --rzp-mint-border: #A7F3D0;
+  
+  --rzp-red: #DC2626;
+  --rzp-red-light: #FEF2F2;
+  --rzp-red-border: #FECACA;
+  
+  --rzp-amber: #D97706;
+  --rzp-amber-light: #FFFBEB;
+  --rzp-amber-border: #FDE68A;
+
+  --bg-page: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  
+  --text-main: #0D121F;
+  --text-body: #334155;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
+
+  --border-light: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-card: 0 4px 20px -2px rgba(13, 18, 31, 0.06), 0 2px 6px -1px rgba(13, 18, 31, 0.03);
+  --shadow-float: 0 20px 40px -15px rgba(13, 18, 31, 0.12), 0 0 1px rgba(13, 18, 31, 0.1);
+  --shadow-btn: 0 4px 14px rgba(37, 99, 235, 0.3);
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-page);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Crisp Razorpay Button Styles */
+.rzp-btn-blue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--rzp-blue);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.22s var(--ease-spring);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  text-decoration: none;
+}
+
+.rzp-btn-blue:hover {
+  background-color: var(--rzp-blue-hover);
+  box-shadow: var(--shadow-btn);
+  transform: translateY(-2px);
+}
+
+.rzp-btn-blue:active {
+  transform: translateY(0);
+}
+
+.rzp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #FFFFFF;
+  color: var(--rzp-blue);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.rzp-btn-outline:hover {
+  border-color: var(--rzp-blue);
+  background-color: var(--rzp-blue-light);
+  transform: translateY(-1px);
+}
+
+.rzp-btn-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--rzp-navy);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.rzp-btn-dark:hover {
+  background-color: #1E293B;
+  transform: translateY(-1px);
+}
+
+/* Minimalist Razorpay Card */
+.rzp-clean-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s var(--ease-spring);
+}
+
+.rzp-clean-card:hover {
+  box-shadow: var(--shadow-float);
+  border-color: #CBD5E1;
+}
+
+/* Pill Badges */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pill-blue {
+  background: var(--rzp-blue-light);
+  color: var(--rzp-blue);
+  border: 1px solid var(--rzp-blue-subtle);
+}
+
+.pill-mint {
+  background: var(--rzp-mint-light);
+  color: var(--rzp-mint);
+  border: 1px solid var(--rzp-mint-border);
+}
+
+.pill-red {
+  background: var(--rzp-red-light);
+  color: var(--rzp-red);
+  border: 1px solid var(--rzp-red-border);
+}
+
+.pill-amber {
+  background: var(--rzp-amber-light);
+  color: var(--rzp-amber);
+  border: 1px solid var(--rzp-amber-border);
+}
+
+.pill-dark {
+  background: #0D121F;
+  color: #FFFFFF;
+}
+
+/* Animated Rotating Word in Hero */
+.rotating-word-container {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  height: 68px;
+}
+
+.rotating-word-enter {
+  animation: slideFadeIn 0.4s var(--ease-spring) forwards;
+}
+
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating Currency Coin Animations */
+.floating-coin {
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s ease;
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+
+.floating-coin:nth-child(2) { animation-delay: 0.5s; }
+.floating-coin:nth-child(3) { animation-delay: 1.0s; }
+.floating-coin:nth-child(4) { animation-delay: 1.5s; }
+.floating-coin:nth-child(5) { animation-delay: 2.0s; }
+.floating-coin:nth-child(6) { animation-delay: 2.5s; }
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.floating-coin:hover {
+  transform: translateY(-8px) scale(1.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Pulsing Status Dot */
+.pulse-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--rzp-blue);
+  box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+  animation: pulse-dot 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+  display: inline-block;
+}
+
+.pulse-status-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-dot-green 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+  display: inline-block;
+}
+
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+@keyframes pulse-dot-green {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Animated Brand Marquee Ribbon */
+.marquee-wrapper {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  gap: 48px;
+  width: max-content;
+  animation: marquee-slide 28s linear infinite;
+}
+
+@keyframes marquee-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Modal Overlay & QR Scan Animation */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13, 18, 31, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.22s var(--ease-spring);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.qr-scanner-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #2563EB, #00D2B4, transparent);
+  box-shadow: 0 0 8px #2563EB;
+  animation: qrScan 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes qrScan {
+  0% { top: 8%; opacity: 0.8; }
+  100% { top: 92%; opacity: 0.8; }
+}
+
+/* Custom Enterprise Range Slider */
+input[type=range].rzp-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: #E2E8F0;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+input[type=range].rzp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2563EB;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+  border: 3px solid #FFFFFF;
+  transition: transform 0.15s ease;
+}
+
+input[type=range].rzp-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Terminal & Code Block */
+.rzp-terminal-window {
+  background: #0A0F1D;
+  border: 1px solid #1E293B;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+
+.rzp-terminal-header {
+  background: #0F172A;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1E293B;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rzp-terminal-body {
+  padding: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #94A3B8;
+  overflow-x: auto;
+}
+
+pre, code {
+  font-family: var(--font-mono);
+}
+
+/* Spinner used by the checkout and approval-gate surfaces. */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}

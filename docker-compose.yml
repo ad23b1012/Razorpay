@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_demo12345678}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-demo_secret_key_abcdef}
+      - RAZORPAY_MOCK_MODE=${RAZORPAY_MOCK_MODE:-true}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SUPABASE_DATABASE_URL=${SUPABASE_DATABASE_URL:-}
+    volumes:
+      - ./backend/razoragent.db:/app/razoragent.db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
