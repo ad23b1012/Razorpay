@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ShoppingCart, Info, Check, X, ArrowRight, ShieldCheck, CreditCard, Globe, Headphones, Zap, TrendingUp } from 'lucide-react';
+import { productPlaceholder, handleImageError } from '../../utils/productPlaceholder';
 
 export default function StorefrontView({
   products,
@@ -54,10 +55,71 @@ export default function StorefrontView({
   const activeAudienceObj = audiences.find(a => a.id === activeAudienceTab) || audiences[0];
 
   return (
-    <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '40px 32px 100px' }}>
-      
+    // A flex column with explicit ordering, so the live demo sits near the top
+    // where a first-time visitor lands, while the marketing sections below keep
+    // their original markup untouched.
+    <div style={{
+      maxWidth: '1360px',
+      margin: '0 auto',
+      padding: '32px 32px 100px',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+
+      {/* 0. Orientation band — what this is, and where to start */}
+      <div style={{
+        order: 1,
+        background: 'linear-gradient(135deg, #0D121F 0%, #1E293B 100%)',
+        borderRadius: '20px',
+        padding: '28px 32px',
+        marginBottom: '32px',
+        color: '#FFFFFF',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
+          <div style={{ maxWidth: '620px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+              <span className="pill-badge pill-blue" style={{ fontSize: '11px', fontWeight: 700 }}>
+                RAZORPAY AI CHALLENGE · TRACK 01
+              </span>
+              <span style={{ fontSize: '12px', color: '#94A3B8' }}>AI Growth &amp; Agentic Commerce</span>
+            </div>
+
+            <h2 style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.25, marginBottom: '10px' }}>
+              A storefront an AI agent can buy from — where every rupee it moves is
+              bounded, gated and auditable.
+            </h2>
+
+            <p style={{ fontSize: '14px', color: '#CBD5E1', lineHeight: 1.6 }}>
+              Shop it yourself below, or let the assistant do it. Ask it for
+              <strong style={{ color: '#FFFFFF' }}> 40% off</strong> and watch it refuse, then hand the
+              decision to a human instead of inventing a discount.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '220px' }}>
+            <button
+              onClick={() => onOpenAiBuyer()}
+              className="rzp-btn-blue"
+              style={{ padding: '12px 18px', fontSize: '14px', justifyContent: 'center' }}
+            >
+              <Sparkles size={15} /> Ask the AI buyer
+            </button>
+            <button
+              onClick={() => document.getElementById('demo-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="rzp-btn-outline"
+              style={{ padding: '12px 18px', fontSize: '14px', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.2)' }}
+            >
+              <ShoppingCart size={15} /> Browse the catalog
+            </button>
+            <span style={{ fontSize: '11px', color: '#64748B', textAlign: 'center', lineHeight: 1.5 }}>
+              Machine buyers: see the <strong style={{ color: '#94A3B8' }}>A2A Protocol</strong> tab
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* 1. Official Hero Section (Screenshots 1, 2, 3) */}
-      <div style={{ marginBottom: '40px' }}>
+      <div style={{ order: 3, marginBottom: '40px' }}>
         <div style={{ fontSize: '13px', fontWeight: 700, color: '#2563EB', marginBottom: '12px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
           Accept Agentic & International Payments
         </div>
@@ -114,7 +176,7 @@ export default function StorefrontView({
               className="rzp-btn-blue"
               style={{ padding: '10px 22px', fontSize: '14px' }}
             >
-              Sign Up <ArrowRight size={15} />
+              Ask the AI buyer <ArrowRight size={15} />
             </button>
           </div>
         </div>
@@ -122,6 +184,7 @@ export default function StorefrontView({
 
       {/* 2. Interactive Signature Comparison Component (Screenshots 1, 2, 3) */}
       <div style={{
+        order: 4,
         background: 'linear-gradient(135deg, #1E293B 0%, #0D121F 100%)',
         borderRadius: '24px',
         overflow: 'hidden',
@@ -318,7 +381,7 @@ export default function StorefrontView({
       </div>
 
       {/* Brand Trust Marquee */}
-      <div className="marquee-wrapper" style={{ marginBottom: '64px', padding: '12px 0', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+      <div className="marquee-wrapper" style={{ order: 5, marginBottom: '64px', padding: '12px 0', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
         <div className="marquee-track">
           {['Flipkart', 'Swiggy', 'MakeMyTrip', 'Policybazaar', 'Nykaa', 'CRED', 'Zerodha', 'BookMyShow', 'Zomato', 'Urban Company', 'Flipkart', 'Swiggy', 'MakeMyTrip', 'Policybazaar', 'Nykaa', 'CRED', 'Zerodha', 'BookMyShow'].map((brand, i) => (
             <span key={i} style={{ fontSize: '14px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.04em' }}>
@@ -329,7 +392,7 @@ export default function StorefrontView({
       </div>
 
       {/* 3. 3-Card Feature Grid (From Screenshot 4) */}
-      <div style={{ marginBottom: '72px' }}>
+      <div style={{ order: 6, marginBottom: '72px' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -362,7 +425,7 @@ export default function StorefrontView({
         {/* 3 Clean Cards Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '24px',
           marginBottom: '20px',
         }}>
@@ -526,7 +589,7 @@ export default function StorefrontView({
       </div>
 
       {/* 4. Live Agent-Transactable Product Storefront */}
-      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '56px' }}>
+      <div id="demo-catalog" style={{ order: 2, paddingTop: '8px', marginBottom: '72px', scrollMarginTop: '90px' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -604,8 +667,10 @@ export default function StorefrontView({
                     overflow: 'hidden',
                   }}>
                     <img
-                      src={product.image_url}
+                      src={product.image_url || productPlaceholder(product.name, product.category)}
                       alt={product.name}
+                      loading="lazy"
+                      onError={(e) => handleImageError(e, product.name, product.category)}
                       style={{
                         width: '100%',
                         height: '100%',

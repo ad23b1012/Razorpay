@@ -28,7 +28,14 @@ export default function GrowthCockpit() {
     return <div style={{ textAlign: 'center', padding: '80px', color: '#64748B' }}>Loading Razorpay Growth Engine...</div>;
   }
 
-  const baselineWidth = Math.round((metrics.baseline_revenue_inr / metrics.total_revenue_inr) * 100) || 75;
+  // This bar splits the *treated arm's* revenue into the part the holdout says
+  // would have arrived anyway, and the part the agent added. Dividing by total
+  // revenue across both arms would compare a counterfactual for one arm against
+  // the sum of two, which is not a ratio of anything.
+  const treatedRevenue = metrics.baseline_revenue_inr + metrics.incremental_revenue_inr;
+  const baselineWidth = treatedRevenue > 0
+    ? Math.round((metrics.baseline_revenue_inr / treatedRevenue) * 100)
+    : 100;
   const upliftWidth = 100 - baselineWidth;
 
   return (
@@ -89,7 +96,8 @@ export default function GrowthCockpit() {
       {/* 2. Top KPI Cards Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        // Reflows instead of squashing four cards onto a narrow screen.
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
         gap: '24px',
         marginBottom: '36px',
       }}>
@@ -163,14 +171,14 @@ export default function GrowthCockpit() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0D121F' }}>
-              A/B Revenue Breakdown: Organic Baseline vs. RazorAgent Uplift
+              Where the treated arm's revenue came from
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B' }}>
-              Measured across live customer checkouts and bounded bundles ("THE BAR").
+              The holdout says how much would have arrived without the agent. The rest is what it added.
             </p>
           </div>
           <span className="pill-badge pill-mint" style={{ fontSize: '12px' }}>
-            +34.3% NET INCREMENTAL LIFT
+            {metrics.revenue_uplift_percent >= 0 ? '+' : ''}{metrics.revenue_uplift_percent}% NET INCREMENTAL LIFT
           </span>
         </div>
 
@@ -193,7 +201,7 @@ export default function GrowthCockpit() {
             fontSize: '13px',
             fontWeight: 600,
           }}>
-            Organic Baseline: ₹{metrics.baseline_revenue_inr.toLocaleString('en-IN')} ({baselineWidth}%)
+            Would have arrived anyway: ₹{metrics.baseline_revenue_inr.toLocaleString('en-IN')} ({baselineWidth}%)
           </div>
 
           <div style={{
@@ -210,9 +218,11 @@ export default function GrowthCockpit() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B' }}>
-          <span>Control Group (Standard Static Cart)</span>
-          <span style={{ color: '#2563EB', fontWeight: 700 }}>Test Group (RazorAgent Dynamic Bounded Bundles)</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B', gap: '16px' }}>
+          <span>Counterfactual, priced at the holdout's revenue per session</span>
+          <span style={{ color: '#2563EB', fontWeight: 700, textAlign: 'right' }}>
+            Attributable to the agent, net of discount spent
+          </span>
         </div>
       </div>
 
@@ -297,7 +307,7 @@ export default function GrowthCockpit() {
           <span className="pill-badge pill-blue">{campaigns.length} CAMPAIGNS RUNNING</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
           {campaigns.map((camp) => (
             <div
               key={camp.id}

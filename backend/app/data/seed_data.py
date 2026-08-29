@@ -25,7 +25,7 @@ SEED_PRODUCTS = [
         "mrp_inr": 12999.00,
         "stock_quantity": 85,
         "is_active": True,
-        "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80",
+        "image_url": None,  # Frontend renders local category artwork.
         "agent_readable_specs": {
             "driver": "40mm Beryllium Dynamic",
             "anc_depth_db": 42,
@@ -49,7 +49,7 @@ SEED_PRODUCTS = [
         "mrp_inr": 22999.00,
         "stock_quantity": 42,
         "is_active": True,
-        "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80",
+        "image_url": None,  # Frontend renders local category artwork.
         "agent_readable_specs": {
             "case_material": "Grade 5 Titanium",
             "display": "1.43 inch AMOLED Sapphire Glass (1000 nits)",
@@ -71,7 +71,7 @@ SEED_PRODUCTS = [
         "mrp_inr": 5999.00,
         "stock_quantity": 120,
         "is_active": True,
-        "image_url": "https://images.unsplash.com/photo-1586816879360-004f5b0c51e5?w=800&auto=format&fit=crop&q=80",
+        "image_url": None,  # Frontend renders local category artwork.
         "agent_readable_specs": {
             "total_output_watts": 25,
             "phone_output_watts": 15,
@@ -94,7 +94,7 @@ SEED_PRODUCTS = [
         "mrp_inr": 3499.00,
         "stock_quantity": 210,
         "is_active": True,
-        "image_url": "https://images.unsplash.com/photo-1622445262464-84b1456045b6?w=800&auto=format&fit=crop&q=80",
+        "image_url": None,  # Frontend renders local category artwork.
         "agent_readable_specs": {
             "technology": "Gallium Nitride (GaN III)",
             "max_output_watts": 65,
@@ -115,7 +115,7 @@ SEED_PRODUCTS = [
         "mrp_inr": 5499.00,
         "stock_quantity": 160,
         "is_active": True,
-        "image_url": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop&q=80",
+        "image_url": None,  # Frontend renders local category artwork.
         "agent_readable_specs": {
             "spatial_audio": "3D Dynamic Head-Tracking",
             "microphones": "6-Mic Environmental Noise Cancellation (ENC)",
@@ -136,7 +136,7 @@ SEED_PRODUCTS = [
         "mrp_inr": 1499.00,
         "stock_quantity": 300,
         "is_active": True,
-        "image_url": "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80",
+        "image_url": None,  # Frontend renders local category artwork.
         "agent_readable_specs": {
             "material": "High-density EVA + Waterproof Oxford",
             "zipper": "YKK AquaGuard",

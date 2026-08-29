@@ -492,6 +492,34 @@ export default function SafetyAuditView() {
             </div>
 
             {/* Audit Log Items */}
+            {filteredLogs.length === 0 && (
+              // A fresh database has nothing to show here. Say what the ledger is
+              // waiting for rather than rendering an empty box under a heading
+              // that promises a real-time trail.
+              <div style={{
+                padding: '32px 24px',
+                textAlign: 'center',
+                border: '1px dashed #CBD5E1',
+                borderRadius: '12px',
+                background: '#F8FAFC',
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#0D121F', marginBottom: '6px' }}>
+                  {logs.length === 0 ? 'No decisions recorded yet' : `No decisions with status “${filterStatus}”`}
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#64748B', lineHeight: 1.6, maxWidth: '440px', margin: '0 auto' }}>
+                  {logs.length === 0 ? (
+                    <>
+                      Every money decision lands here the moment it happens. Add something to the
+                      cart, ask the AI buyer for <strong>40% off</strong>, or run a scenario in the
+                      Resilience Lab — then come back.
+                    </>
+                  ) : (
+                    <>Nothing matched that filter. Choose <strong>ALL</strong> to see every decision.</>
+                  )}
+                </p>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px', minWidth: 0 }}>
               {filteredLogs.map((log) => {
                 const isSelected = selectedLog?.id === log.id;
