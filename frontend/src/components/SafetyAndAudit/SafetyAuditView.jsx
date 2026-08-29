@@ -136,8 +136,11 @@ export default function SafetyAuditView() {
             gap: '20px',
           }}>
             <div>
-              <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>POLICY STATUS</div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: '#34D399', marginTop: '2px' }}>100% ENFORCED</div>
+              {/* The bound actually in force, rather than an assertion that one is. */}
+              <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>DISCOUNT CEILING</div>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: '#34D399', marginTop: '2px' }}>
+                {maxDiscount || '—'}% MAX
+              </div>
             </div>
             <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.1)', paddingLeft: '20px' }}>
               <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>AUDIT LOGS</div>

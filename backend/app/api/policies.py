@@ -1,3 +1,4 @@
+import logging
 from typing import List, Dict, Any
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,7 +12,40 @@ from app.schemas.checkout import CreateOrderRequest
 from app.services import approvals as approvals_service
 from app.services import order_service
 
+logger = logging.getLogger("razoragent.policies")
+
 router = APIRouter(prefix="/api/v1/policies", tags=["Guardrails & Approval Gates"])
+
+
+async def load_policy_into_engine(db: AsyncSession) -> None:
+    """
+    Applies the merchant's saved policy to the live guardrail engine.
+
+    The engine holds its bounds in memory, so without this a restart silently
+    reverted enforcement to the .env defaults while the console kept displaying
+    the saved values — a merchant could tighten the discount cap, restart, and be
+    told 5% while 20% was actually being enforced. Called on startup and after
+    every policy write, so the two can never disagree.
+    """
+    result = await db.execute(select(GuardrailPolicy).limit(1))
+    policy = result.scalar_one_or_none()
+    if not policy:
+        return
+
+    if policy.max_global_discount_percent is not None:
+        guardrail_engine.max_discount_pct = policy.max_global_discount_percent
+    if policy.approval_threshold_inr is not None:
+        guardrail_engine.approval_threshold_inr = policy.approval_threshold_inr
+    if policy.min_cart_value_inr is not None:
+        guardrail_engine.min_cart_value_inr = policy.min_cart_value_inr
+    if policy.daily_budget_inr is not None:
+        guardrail_engine.daily_budget_inr = policy.daily_budget_inr
+
+    logger.info(
+        f"Guardrail engine loaded from saved policy: max {guardrail_engine.max_discount_pct}%, "
+        f"approval gate ₹{guardrail_engine.approval_threshold_inr:,.2f}"
+    )
+
 
 @router.get("")
 async def get_guardrail_policy(db: AsyncSession = Depends(get_db)):

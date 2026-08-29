@@ -614,3 +614,35 @@ async def test_discovery_document_advertises_the_purchase_challenge():
         assert doc["purchase"]["url"] == "/agent/v1/purchase"
         assert doc["purchase"]["challenge_status_code"] == 402
         assert doc["audit"]["verify_url"] == "/api/v1/audit/verify"
+
+
+@pytest.mark.asyncio
+async def test_saved_policy_survives_a_restart():
+    """The console must never display a bound the engine is not enforcing."""
+    from app.api.policies import load_policy_into_engine
+    from app.config import settings
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        await ac.put("/api/v1/policies", json={"max_global_discount_percent": 5.0})
+
+        # Simulate a process restart: the in-memory engine reverts to its
+        # configured default and must be reloaded from the saved policy.
+        guardrail_engine.max_discount_pct = settings.MAX_GLOBAL_DISCOUNT_PERCENT
+        async with AsyncSessionLocal() as session:
+            await load_policy_into_engine(session)
+
+        assert guardrail_engine.max_discount_pct == 5.0
+
+        shown = (await ac.get("/api/v1/policies")).json()["max_global_discount_percent"]
+        enforced = (await ac.post("/api/v1/checkout/create-order", json={
+            "items": [{"product_id": "prod_aura_anc_pro", "quantity": 1}],
+            "applied_discount_inr": 1500.0,
+            "session_id": "sess_policy_reload",
+        })).json()
+
+        assert shown == 5.0
+        assert enforced["discount_inr"] == round(7999.0 * 0.05, 2), (
+            "Enforcement drifted from the policy the console displays"
+        )
+
+    guardrail_engine.max_discount_pct = settings.MAX_GLOBAL_DISCOUNT_PERCENT

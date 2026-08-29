@@ -136,8 +136,16 @@ class GrowthAgent:
         original_addon_price = rec_product.price_inr
         proposed_discount_inr = (original_addon_price * discount_pct) / 100.0
         
+        # The campaign that funds this offer is the one targeting what the
+        # shopper is already buying, not the add-on being pitched. A campaign
+        # described as cross-selling "on premium audio checkouts" has to be
+        # credited on an audio checkout, or it never fires at all.
+        cart_category = (
+            max(cart_prods, key=lambda p: p.price_inr).category if cart_prods else None
+        )
+
         # Run through Guardrails Engine ("THE BAR")
-        campaign, budget_left = await budget_service.remaining_budget(db, rec_product.category)
+        campaign, budget_left = await budget_service.remaining_budget(db, cart_category)
 
         eval_result = guardrail_engine.evaluate_discount(
             original_price_inr=original_addon_price,

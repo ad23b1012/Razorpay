@@ -169,14 +169,14 @@ async def seed_database_if_empty(db: AsyncSession):
         target_category="Audio",
         strategy="dynamic_upsell",
         allocated_budget_inr=50000.0,
-        spent_discount_inr=6400.0,
+        spent_discount_inr=0.0,
         max_discount_percent=15.0,
         min_order_value_inr=2500.0,
-        impressions=142,
-        interventions=68,
-        conversions=34,
-        gross_revenue_inr=184000.0,
-        incremental_revenue_inr=48500.0,
+        impressions=0,
+        interventions=0,
+        conversions=0,
+        gross_revenue_inr=0.0,
+        incremental_revenue_inr=0.0,
         is_active=True
     )
     db.add(camp_audio)
@@ -188,14 +188,14 @@ async def seed_database_if_empty(db: AsyncSession):
         target_category="All",
         strategy="cart_abandonment",
         allocated_budget_inr=30000.0,
-        spent_discount_inr=4200.0,
+        spent_discount_inr=0.0,
         max_discount_percent=20.0,
         min_order_value_inr=1500.0,
-        impressions=98,
-        interventions=42,
-        conversions=18,
-        gross_revenue_inr=89000.0,
-        incremental_revenue_inr=24600.0,
+        impressions=0,
+        interventions=0,
+        conversions=0,
+        gross_revenue_inr=0.0,
+        incremental_revenue_inr=0.0,
         is_active=True
     )
     db.add(camp_exit)
@@ -208,7 +208,7 @@ async def seed_database_if_empty(db: AsyncSession):
         max_global_discount_percent=20.0,
         max_single_item_discount_percent=25.0,
         daily_budget_inr=50000.0,
-        spent_today_inr=10600.0,
+        spent_today_inr=0.0,
         approval_threshold_inr=5000.0,
         min_cart_value_inr=1500.0,
         prompt_injection_defense_enabled=True,
@@ -267,6 +267,12 @@ async def seed_experiment_history(db: AsyncSession) -> None:
     products = product_result.scalars().all()
     if not products:
         return
+
+    # Campaigns that will be credited for the seeded agent activity below,
+    # keyed by the category each one targets.
+    campaign_result = await db.execute(select(Campaign))
+    campaigns = campaign_result.scalars().all()
+    campaign_for = {c.target_category: c for c in campaigns}
 
     # Real storefronts sell far more cheap accessories than flagship items.
     # Weighting inversely to price reproduces that long tail and keeps a single
@@ -371,6 +377,24 @@ async def seed_experiment_history(db: AsyncSession) -> None:
                     ] if upsell_item else []),
                 )
                 db.add(order)
+
+                # Credit the campaign that would have funded this discount, so
+                # the cockpit's campaign figures are derived from the seeded
+                # orders rather than being numbers nobody can trace.
+                if arm == TREATMENT:
+                    # Credited by what the shopper was buying, matching how
+                    # GrowthAgent resolves the funding campaign at runtime.
+                    funder = campaign_for.get(product.category) or campaign_for.get("All")
+                    if funder:
+                        funder.impressions = (funder.impressions or 0) + 1
+                        if upsell_item:
+                            funder.interventions = (funder.interventions or 0) + 1
+                            funder.conversions = (funder.conversions or 0) + 1
+                            funder.spent_discount_inr = (funder.spent_discount_inr or 0.0) + discount
+                            funder.incremental_revenue_inr = (
+                                funder.incremental_revenue_inr or 0.0
+                            ) + max(0.0, upsell_item.price_inr - discount)
+                        funder.gross_revenue_inr = (funder.gross_revenue_inr or 0.0) + total
 
                 session.orders_count = 1
                 session.revenue_inr = total

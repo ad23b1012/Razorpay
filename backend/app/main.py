@@ -7,6 +7,7 @@ from app.core.razorpay_client import razorpay_service
 from app.core.database import engine, Base, AsyncSessionLocal, ensure_schema_current
 from app.data.seed_data import seed_database_if_empty, seed_experiment_history
 from app.api import catalog, checkout, agent, growth, policies, audit, simulation, protocol, agent_commerce
+from app.api.policies import load_policy_into_engine
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +26,9 @@ async def lifespan(app: FastAPI):
     async with AsyncSessionLocal() as session:
         await seed_database_if_empty(session)
         await seed_experiment_history(session)
+        # Restore the merchant's saved bounds, so what the console shows is what
+        # the engine actually enforces.
+        await load_policy_into_engine(session)
 
     logger.info(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} ready!")
     logger.info(f"CORS allowlist: {settings.cors_origin_list}")
