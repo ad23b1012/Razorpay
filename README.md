@@ -22,7 +22,7 @@ It bridges both sides of the next generation of commerce:
 
 | Hackathon Requirement | RazorAgent Implementation | Where to inspect in Demo |
 | :--- | :--- | :--- |
-| **"Make the merchant transactable by an AI buyer end to end"** | Standardized `/agent/v1/catalog` + Conversational In-App Buyer + Razorpay Orders API and **real Razorpay Checkout**, captured only after server-side HMAC-SHA256 signature verification. | **Storefront & AI Buyer** / **A2A Protocol Inspector** |
+| **"Make the merchant transactable by an AI buyer end to end"** | A **runnable autonomous buyer** (`demo/autonomous_buyer.py`) that discovers the merchant, reads the catalog, negotiates, receives a **402 Payment Required** challenge, settles it, and redeems a signed receipt — with no human in the loop. | `python demo/autonomous_buyer.py --haggle` |
 | **"Grow the merchant's revenue on Razorpay"** | A Gemini-driven upsell agent measured against a **50% holdout**. Incremental revenue is the difference in revenue *per session* between arms — never the value of agent-touched orders. | **Merchant Growth Cockpit** |
 | **"Every money action explainable"** | Every decision records the model's own rationale, the full list of bounds evaluated, and which one bound. | **Safety & Audit Cockpit** (Deep Trace Inspector) |
 | **"Every money action bounded and gated"** | Every bound (global cap, per-product catalog ceiling, margin floor, campaign budget, low-cart cap) is evaluated together and the **tightest one binds** — no rule can emit a discount that breaches another. Anything past the ₹5,000 gate books **no order at all** until a human rules; approving *resumes* the original checkout. | **Safety & Audit Cockpit** (Policy Bounds & Approvals) |
@@ -85,11 +85,83 @@ RazorAgent is designed with enterprise modularity and can be deployed for **100%
 
 ---
 
+## 🤖 Watch an AI Agent Buy Something
+
+The track asks for a merchant that is *transactable by an AI buyer end to end*.
+So the headline demo is not a screenshot — it is an agent doing it:
+
+```bash
+python demo/autonomous_buyer.py --haggle
+```
+
+The agent starts from a single URL and works everything else out for itself:
+
+```
+[1] Discover        GET /.well-known/agent-commerce.json
+[2] Catalog         6 items, each with its own negotiation ceiling
+[3] Choose          Nova Chrono ₹14,999 — within my ₹16,000 mandate
+[4] Negotiate       offered ₹8,249 · countered at ₹13,199 (12%, its authorised limit)
+                    "the larger ask needs merchant sign-off — queued as appr_2ab59d6cde"
+[5] Purchase        402 Payment Required · ₹13,199.12 due
+[6] Settle          HMAC-SHA256 signature minted
+[7] Redeem          200 OK · FULFILLED · audit trace aud_ccb48d98c4d6
+[8] Verify          chain intact, 5 records checked
+```
+
+Two things are worth pausing on. The agent **lowballs by 45% and does not get
+it** — the merchant counters at the ceiling it is actually authorised to give and
+files the rest for a human. And the agent carries its own **spend mandate**, which
+it enforces itself before paying. Both sides are bounded, and the audit chain
+records both.
+
+### Why a 402?
+
+An AI buyer has no browser, no session, and nobody to click "Pay". What it does
+have is an HTTP client. So `POST /agent/v1/purchase` answers with **402 Payment
+Required** and a body describing exactly what is owed and how to prove payment:
+
+```
+POST /agent/v1/purchase                    → 402 + amount, order id, signature scheme
+   ...agent settles...
+POST /agent/v1/purchase (with `payment`)   → 200 + signed receipt
+```
+
+This is the challenge/settle pattern x402 popularised, in this merchant's own
+documented dialect. It is **not** a conformant x402 implementation and does not
+interoperate with x402 clients — the discovery document says so in as many words.
+
+Every guarantee the human checkout enforces applies identically here: bounded
+discounts, a 202 (and no order at all) above the approval threshold, atomic stock
+reservation, and no fulfilment without a verified signature. Retries carry an
+`Idempotency-Key`, so a re-sent challenge returns the same order rather than
+booking a second one.
+
+---
+
 ## 💻 Local Quickstart (Run in 2 Minutes)
 
 ### Prerequisites
 * Python 3.10+
 * Node.js 18+
+
+### Fastest path — one command
+
+```bash
+./start.sh
+```
+
+Creates the virtualenv, installs both halves on first run, starts the API on
+`:8000` and the UI on `:5173`, and stops both on Ctrl-C.
+
+Or with Docker:
+
+```bash
+docker compose up --build
+```
+
+Both work with no configuration at all.
+
+### Or start each half yourself
 
 > **Adding your own Razorpay / Gemini / Postgres credentials?** Follow
 > [SETUP.md](SETUP.md) — it covers where `.env` goes, how to verify each

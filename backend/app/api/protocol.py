@@ -48,6 +48,19 @@ async def agent_commerce_discovery(db: AsyncSession = Depends(get_db)):
             "supports_target_budget": True,
             "supports_counter_offers": True,
         },
+        "purchase": {
+            "url": "/agent/v1/purchase",
+            "method": "POST",
+            "flow": "http-payment-challenge",
+            "description": (
+                "Call without a `payment` field and receive 402 Payment Required carrying the "
+                "amount due and how to settle it. Repeat the call with proof of payment and the "
+                "signature is verified before anything is fulfilled."
+            ),
+            "challenge_status_code": 402,
+            "idempotency": "Send an Idempotency-Key header (or idempotency_key field) so a retry returns the same order.",
+            "honours_buyer_mandate_field": "max_spend_inr",
+        },
         "checkout": {
             "create_order_url": "/api/v1/checkout/create-order",
             "verify_payment_url": "/api/v1/checkout/verify-payment",
@@ -69,6 +82,11 @@ async def agent_commerce_discovery(db: AsyncSession = Depends(get_db)):
             "methods": ["UPI", "CARD", "NETBANKING", "WALLET"],
             "signature_algorithm": "HMAC-SHA256",
             "signature_message": "{razorpay_order_id}|{razorpay_payment_id}",
+        },
+        "audit": {
+            "trail_url": "/api/v1/audit/logs",
+            "verify_url": "/api/v1/audit/verify",
+            "description": "Hash-chained. Any buyer can independently verify the merchant did not rewrite history.",
         },
         "guarantees": [
             "Every discount is bounded by the tightest applicable policy, never the first one matched.",

@@ -139,11 +139,42 @@ async def price_cart(db: AsyncSession, request: CreateOrderRequest) -> Dict[str,
     }
 
 
+async def find_by_idempotency_key(db: AsyncSession, key: str) -> Optional[Order]:
+    """Returns the order a previous identical request already created, if any."""
+    result = await db.execute(select(Order).where(Order.idempotency_key == key))
+    return result.scalar_one_or_none()
+
+
+def order_to_result(order: Order, replayed: bool = False) -> Dict[str, Any]:
+    """Renders a stored order in the same shape create_order returns."""
+    metadata = order.order_metadata or {}
+    return {
+        "outcome": "created",
+        "order_id": order.id,
+        "razorpay_order_id": order.razorpay_order_id,
+        "amount_inr": round(order.total_amount_inr, 2),
+        "amount_paise": int(round(order.total_amount_inr * 100)),
+        "currency": order.currency or "INR",
+        "razorpay_key_id": razorpay_service.key_id,
+        "status": order.status,
+        "items_count": len(order.items),
+        "discount_inr": round(order.discount_inr or 0.0, 2),
+        "is_mock": bool(metadata.get("is_mock", False)),
+        "guardrail_status": metadata.get("guardrail_status", "PASSED"),
+        "explainability_note": order.discount_rationale or "",
+        "constraints_evaluated": metadata.get("constraints_evaluated", []),
+        "gateway_attempts": [],
+        "gateway_degraded": False,
+        "replayed": replayed,
+    }
+
+
 async def create_order(
     db: AsyncSession,
     request: CreateOrderRequest,
     approved_discount_inr: Optional[float] = None,
     approval_id: Optional[str] = None,
+    idempotency_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Prices a cart, runs it through the guardrail engine, and either books a
@@ -157,6 +188,12 @@ async def create_order(
     request after a human approved it. It is still clamped to the hard margin
     floor: an approval can lift a policy cap, never the cost floor.
     """
+    if idempotency_key:
+        existing = await find_by_idempotency_key(db, idempotency_key)
+        if existing:
+            logger.info(f"Replaying order {existing.id} for idempotency key {idempotency_key}.")
+            return order_to_result(existing, replayed=True)
+
     priced = await price_cart(db, request)
     subtotal = priced["subtotal_inr"]
 
@@ -259,11 +296,14 @@ async def create_order(
         customer_phone=request.customer_phone,
         session_id=request.session_id,
         items=priced["order_items"],
+        idempotency_key=idempotency_key,
         order_metadata={
             "guardrail_status": guardrail_status,
             "approval_id": approval_id,
             "binding_constraint": decision.get("binding_constraint"),
             "upsell_revenue_inr": round(upsell_revenue, 2),
+            "constraints_evaluated": decision["constraints_evaluated"],
+            "is_mock": rp_order.get("is_mock", False),
         },
     )
     db.add(order)

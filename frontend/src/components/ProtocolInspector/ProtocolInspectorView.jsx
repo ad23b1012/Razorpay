@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Terminal, Send, CheckCircle2, Copy, Play, ArrowRight, Sparkles, Cpu, Layers, Code2, Globe, Check } from 'lucide-react';
-import { fetchAgentCatalog, negotiateA2AProtocol, fetchAgentDiscoveryDocument } from '../../services/api';
+import { fetchAgentCatalog, negotiateA2AProtocol, fetchAgentDiscoveryDocument, runAgentPurchaseChallenge, settleAndRedeem } from '../../services/api';
 
 export default function ProtocolInspectorView() {
   const [catalogJson, setCatalogJson] = useState(null);
@@ -15,6 +15,41 @@ export default function ProtocolInspectorView() {
     buyer_agent_id: 'chatgpt_shopping_agent_04',
   });
   const [negotiateResponse, setNegotiateResponse] = useState(null);
+
+  // The machine purchase flow: 402 challenge, then settle-and-redeem.
+  const CHALLENGE_PRODUCT = 'prod_gan_65w_charger';
+  const [challenge, setChallenge] = useState(null);
+  const [receipt, setReceipt] = useState(null);
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [purchaseError, setPurchaseError] = useState('');
+
+  const handleRequestChallenge = async () => {
+    setPurchaseBusy(true);
+    setPurchaseError('');
+    setReceipt(null);
+    try {
+      const { status, body } = await runAgentPurchaseChallenge(CHALLENGE_PRODUCT);
+      if (status === 402) setChallenge(body);
+      else setPurchaseError(`Expected 402, got ${status}: ${body.message || body.detail || ''}`);
+    } catch (err) {
+      setPurchaseError(err.message);
+    } finally {
+      setPurchaseBusy(false);
+    }
+  };
+
+  const handleSettle = async () => {
+    setPurchaseBusy(true);
+    setPurchaseError('');
+    try {
+      setReceipt(await settleAndRedeem(challenge, CHALLENGE_PRODUCT));
+    } catch (err) {
+      setPurchaseError(err.message);
+    } finally {
+      setPurchaseBusy(false);
+    }
+  };
+
   const [isExecuting, setIsExecuting] = useState(false);
 
   useEffect(() => {
@@ -283,6 +318,75 @@ export default function ProtocolInspectorView() {
               ) : (
                 <pre style={{ color: '#34D399', fontSize: '12px', wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>
                   {JSON.stringify(negotiateResponse, null, 2)}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Machine purchase: the HTTP payment challenge, run live */}
+      <div className="rzp-clean-card" style={{ padding: '24px', marginTop: '24px', minWidth: 0, width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span className="pill-badge pill-blue" style={{ fontSize: '11px', fontWeight: 700 }}>POST</span>
+              <span style={{ fontSize: '15px', fontWeight: 800, color: '#0D121F' }}>/agent/v1/purchase</span>
+            </div>
+            <span style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', display: 'block', maxWidth: '640px', lineHeight: 1.5 }}>
+              An AI buyer has no browser and nobody to click “Pay”. Ask to buy and the merchant
+              answers <strong>402 Payment Required</strong> with the amount due and how to prove
+              payment. Repeat the call with proof and it fulfils.
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <button onClick={handleRequestChallenge} disabled={purchaseBusy} className="rzp-btn-outline" style={{ padding: '9px 14px', fontSize: '12.5px' }}>
+              {purchaseBusy && !challenge ? 'Requesting…' : '1 · Request to buy'}
+            </button>
+            <button onClick={handleSettle} disabled={!challenge || purchaseBusy || Boolean(receipt)} className="rzp-btn-blue" style={{ padding: '9px 14px', fontSize: '12.5px', opacity: challenge && !receipt ? 1 : 0.45 }}>
+              {purchaseBusy && challenge ? 'Settling…' : '2 · Pay & redeem'}
+            </button>
+          </div>
+        </div>
+
+        {purchaseError && (
+          <div style={{ padding: '10px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', color: '#991B1B', fontSize: '12px', marginBottom: '14px' }}>
+            {purchaseError}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+          <div className="rzp-terminal-window" style={{ minWidth: 0 }}>
+            <div className="rzp-terminal-header">
+              <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>THE CHALLENGE</span>
+              {challenge && <span className="pill-badge pill-amber" style={{ fontSize: '10px' }}>HTTP 402</span>}
+            </div>
+            <div className="rzp-terminal-body" style={{ maxHeight: '300px', overflowY: 'auto', padding: '14px', minWidth: 0 }}>
+              {!challenge ? (
+                <span style={{ color: '#94A3B8', fontSize: '12px' }}>
+                  Click “Request to buy” — no payment details are sent, so the merchant must challenge.
+                </span>
+              ) : (
+                <pre style={{ color: '#FBBF24', fontSize: '11.5px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {JSON.stringify({ error: challenge.error, accepts: challenge.accepts, buyer_mandate: challenge.buyer_mandate, retry_with: challenge.retry_with }, null, 2)}
+                </pre>
+              )}
+            </div>
+          </div>
+
+          <div className="rzp-terminal-window" style={{ minWidth: 0 }}>
+            <div className="rzp-terminal-header">
+              <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>THE RECEIPT</span>
+              {receipt && <span className="pill-badge pill-mint" style={{ fontSize: '10px' }}>HTTP 200</span>}
+            </div>
+            <div className="rzp-terminal-body" style={{ maxHeight: '300px', overflowY: 'auto', padding: '14px', minWidth: 0 }}>
+              {!receipt ? (
+                <span style={{ color: '#94A3B8', fontSize: '12px' }}>
+                  Settle the challenge and the signature is verified before anything is fulfilled.
+                </span>
+              ) : (
+                <pre style={{ color: '#34D399', fontSize: '11.5px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {JSON.stringify(receipt, null, 2)}
                 </pre>
               )}
             </div>

@@ -6,7 +6,7 @@ from app.config import settings
 from app.core.razorpay_client import razorpay_service
 from app.core.database import engine, Base, AsyncSessionLocal, ensure_schema_current
 from app.data.seed_data import seed_database_if_empty, seed_experiment_history
-from app.api import catalog, checkout, agent, growth, policies, audit, simulation, protocol
+from app.api import catalog, checkout, agent, growth, policies, audit, simulation, protocol, agent_commerce
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,6 +54,7 @@ app.include_router(protocol.router)
 app.include_router(catalog.router)
 app.include_router(checkout.router)
 app.include_router(agent.router)
+app.include_router(agent_commerce.router)
 app.include_router(growth.router)
 app.include_router(policies.router)
 app.include_router(audit.router)

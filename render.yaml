@@ -1,14 +1,25 @@
+# Render blueprint. The backend runs from the backend/ directory, because the
+# application imports itself as `app.*` — running it as `backend.app.main` from
+# the repo root fails with ModuleNotFoundError.
 services:
   - type: web
     name: razoragent-backend
     env: python
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # One worker: the default SQLite fallback is a single file, and the audit
+    # chain serialises writes. Scale out only once SUPABASE_DATABASE_URL is set.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.6
+      # Leave false so real keys take effect the moment they are added.
       - key: RAZORPAY_MOCK_MODE
-        value: "true"
+        value: "false"
+      # Set this to your deployed frontend origin, or the browser will refuse.
+      - key: CORS_ORIGINS
+        sync: false
       - key: SUPABASE_DATABASE_URL
         sync: false
       - key: GEMINI_API_KEY
@@ -16,4 +27,6 @@ services:
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
         sync: false

@@ -486,3 +486,131 @@ async def test_concurrent_audit_writes_do_not_fork_the_chain():
         verified = (await ac.get("/api/v1/audit/verify")).json()
         assert verified["valid"] is True, verified.get("detail")
         assert verified["records_checked"] >= 4
+
+
+@pytest.mark.asyncio
+async def test_agent_purchase_issues_payment_challenge_then_fulfils():
+    """The end-to-end machine purchase: 402 challenge, settle, redeem."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        body = {
+            "items": [{"product_id": "prod_gan_65w_charger", "quantity": 1}],
+            "buyer_agent_id": "test_agent",
+            "max_spend_inr": 5000.0,
+            "idempotency_key": "idem_test_001",
+        }
+
+        challenge_res = await ac.post("/agent/v1/purchase", json=body)
+        assert challenge_res.status_code == 402, "A purchase without payment must be challenged"
+        challenge = challenge_res.json()
+
+        terms = challenge["accepts"][0]
+        assert terms["amount_inr"] == 1999.0
+        assert terms["razorpay_order_id"].startswith("order_")
+        assert challenge["buyer_mandate"]["within_mandate"] is True
+        assert challenge["guardrail"]["bounds_evaluated"], "The challenge must show the bounds applied"
+
+        # Nothing may be captured while only the challenge has been issued.
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Order).where(Order.razorpay_order_id == terms["razorpay_order_id"])
+            )
+            assert result.scalar_one().status == "created"
+
+        minted = (await ac.post(
+            "/api/v1/checkout/simulate-payment",
+            json={"razorpay_order_id": terms["razorpay_order_id"]},
+        )).json()
+
+        receipt_res = await ac.post("/agent/v1/purchase", json={
+            **body,
+            "payment": {
+                "razorpay_order_id": terms["razorpay_order_id"],
+                "razorpay_payment_id": minted["razorpay_payment_id"],
+                "razorpay_signature": minted["razorpay_signature"],
+            },
+        })
+        assert receipt_res.status_code == 200
+        receipt = receipt_res.json()
+        assert receipt["status"] == "fulfilled"
+        assert receipt["amount_paid_inr"] == 1999.0
+        assert receipt["audit_trace_id"].startswith("aud_")
+
+
+@pytest.mark.asyncio
+async def test_agent_purchase_rejects_forged_payment_proof():
+    """A machine caller must not be able to claim payment it did not make."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        body = {
+            "items": [{"product_id": "prod_gan_65w_charger", "quantity": 1}],
+            "buyer_agent_id": "forger_agent",
+        }
+        challenge = (await ac.post("/agent/v1/purchase", json=body)).json()
+        order_id = challenge["accepts"][0]["razorpay_order_id"]
+
+        forged = await ac.post("/agent/v1/purchase", json={
+            **body,
+            "payment": {
+                "razorpay_order_id": order_id,
+                "razorpay_payment_id": "pay_i_never_made",
+                "razorpay_signature": "0" * 64,
+            },
+        })
+        assert forged.status_code == 400
+
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(Order).where(Order.razorpay_order_id == order_id))
+            assert result.scalar_one().status == "failed"
+
+
+@pytest.mark.asyncio
+async def test_agent_purchase_is_idempotent():
+    """A retried challenge must return the same order, not book a second one."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        body = {
+            "items": [{"product_id": "prod_aura_buds_lite", "quantity": 1}],
+            "buyer_agent_id": "retry_agent",
+            "idempotency_key": "idem_retry_me",
+        }
+
+        first = (await ac.post("/agent/v1/purchase", json=body)).json()
+        second = (await ac.post("/agent/v1/purchase", json=body)).json()
+
+        assert first["accepts"][0]["razorpay_order_id"] == second["accepts"][0]["razorpay_order_id"]
+        assert first["order"]["order_id"] == second["order"]["order_id"]
+
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Order).where(Order.idempotency_key == "idem_retry_me")
+            )
+            assert len(result.scalars().all()) == 1
+
+
+@pytest.mark.asyncio
+async def test_agent_purchase_gates_an_oversized_discount_without_reserving():
+    """An agent asking past the threshold gets 202 and no order at all."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        res = await ac.post("/agent/v1/purchase", json={
+            "items": [{"product_id": "prod_nova_chrono", "quantity": 1}],
+            "buyer_agent_id": "greedy_agent",
+            "requested_discount_inr": 9000.0,
+        })
+        assert res.status_code == 202
+        gate = res.json()
+        assert gate["status"] == "pending_human_approval"
+        assert gate["approval_id"].startswith("appr_")
+
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Order).where(Order.session_id == "agent_greedy_agent")
+            )
+            assert result.scalars().first() is None, "A gated agent purchase must reserve nothing"
+
+
+@pytest.mark.asyncio
+async def test_discovery_document_advertises_the_purchase_challenge():
+    """An agent that only reads discovery must still find the purchase flow."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        doc = (await ac.get("/.well-known/agent-commerce.json")).json()
+        assert doc["purchase"]["url"] == "/agent/v1/purchase"
+        assert doc["purchase"]["challenge_status_code"] == 402
+        assert doc["audit"]["verify_url"] == "/api/v1/audit/verify"

@@ -1,26 +1,45 @@
-version: '3.8'
+# One command to run the whole thing:  docker compose up --build
+#
+# Works with no configuration at all. Any variable you export (or put in a .env
+# beside this file) is passed through, so adding real keys needs no edits here.
 
 services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_demo12345678}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-demo_secret_key_abcdef}
-      - RAZORPAY_MOCK_MODE=${RAZORPAY_MOCK_MODE:-true}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - SUPABASE_DATABASE_URL=${SUPABASE_DATABASE_URL:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_demo12345678}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-demo_secret_key_abcdef}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-demo_webhook_secret_123}
+      RAZORPAY_MOCK_MODE: ${RAZORPAY_MOCK_MODE:-false}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SUPABASE_DATABASE_URL: ${SUPABASE_DATABASE_URL:-}
+      DATABASE_URL: sqlite+aiosqlite:////data/razoragent.db
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
     volumes:
-      - ./backend/razoragent.db:/app/razoragent.db
+      # A named volume, not a bind mount. Binding a file that does not exist
+      # yet makes Docker create a *directory* in its place, and SQLite then
+      # fails to open it.
+      - razoragent-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+
+volumes:
+  razoragent-data:

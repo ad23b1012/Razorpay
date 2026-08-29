@@ -75,6 +75,9 @@ async def simulate_payment(request: SimulatePaymentRequest):
         raise HTTPException(status_code=409, detail=str(e))
 
     return {
+        # Echo the order id so the response is self-contained: a caller can pass
+        # it straight to verification without holding on to its own request.
+        "razorpay_order_id": request.razorpay_order_id,
         **minted,
         "mode": razorpay_service.mode,
         "note": "Simulated payment. The signature below is verified with the same HMAC-SHA256 check Razorpay uses.",

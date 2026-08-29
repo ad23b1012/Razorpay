@@ -180,3 +180,43 @@ export async function fetchAgentDiscoveryDocument() {
   if (!res.ok) throw new Error("Failed to fetch the agent discovery document");
   return res.json();
 }
+
+export async function runAgentPurchaseChallenge(productId, buyerAgentId = "ui_inspector_agent") {
+  const res = await fetch(`${API_BASE_URL}/agent/v1/purchase`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      items: [{ product_id: productId, quantity: 1 }],
+      buyer_agent_id: buyerAgentId,
+      max_spend_inr: 20000,
+      idempotency_key: `ui_${buyerAgentId}_${productId}_${Date.now()}`,
+    }),
+  });
+  // 402 is the expected, successful outcome of the first leg — not an error.
+  return { status: res.status, body: await res.json() };
+}
+
+export async function settleAndRedeem(challenge, productId, buyerAgentId = "ui_inspector_agent") {
+  const terms = challenge.accepts[0];
+
+  const proof = await simulatePayment(terms.razorpay_order_id);
+
+  const res = await fetch(`${API_BASE_URL}/agent/v1/purchase`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      items: [{ product_id: productId, quantity: 1 }],
+      buyer_agent_id: buyerAgentId,
+      payment: {
+        razorpay_order_id: terms.razorpay_order_id,
+        razorpay_payment_id: proof.razorpay_payment_id,
+        razorpay_signature: proof.razorpay_signature,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Fulfilment refused");
+  }
+  return res.json();
+}

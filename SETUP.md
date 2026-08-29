@@ -196,6 +196,16 @@ Then in the UI, in this order:
    counted separately.
 9. **A2A Protocol** — the discovery document loads; run the negotiation.
 
+**The autonomous agent path**, which is the strongest single thing to show:
+
+```bash
+python demo/autonomous_buyer.py --haggle
+```
+
+It exercises discovery, catalog, negotiation, the 402 challenge, settlement,
+fulfilment and audit verification in one run — so if it finishes green, the
+machine-facing half of the product is working end to end.
+
 Backend tests, any time:
 
 ```bash

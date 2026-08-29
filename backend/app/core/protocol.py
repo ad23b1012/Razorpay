@@ -31,8 +31,14 @@ ALIGNED_WITH = [
     },
     {
         "specification": "x402",
-        "borrowed": "An HTTP challenge that hands a machine caller the payment instructions it needs.",
-        "status": "aligned in shape, not a certified implementation",
+        "borrowed": (
+            "The challenge/settle pattern: POST /agent/v1/purchase answers 402 Payment Required "
+            "with the amount due and how to pay, and fulfils only once proof of payment verifies."
+        ),
+        "status": (
+            "same pattern, our own field names — this is not a conformant x402 implementation "
+            "and does not interoperate with x402 clients"
+        ),
     },
     {
         "specification": "NPCI UAP",

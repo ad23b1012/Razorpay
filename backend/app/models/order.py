@@ -35,6 +35,11 @@ class Order(Base):
     # Seeded demo history is flagged so it is never passed off as live activity.
     is_seed_data = Column(Boolean, default=False, index=True)
 
+    # Supplied by machine callers so a retried request returns the original order
+    # instead of booking a second one. Unique, so the database enforces it even
+    # when two retries arrive at once.
+    idempotency_key = Column(String(128), nullable=True, unique=True, index=True)
+
     # Metadata & Items
     order_metadata = Column(JSON, default=dict)
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan", lazy="selectin")

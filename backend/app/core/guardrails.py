@@ -171,15 +171,31 @@ class GuardrailEngine:
             )
 
         if proposed_discount_inr <= 0:
+            # No discount asked for, but still report the bounds that were in
+            # force. An agent buying at list price should be able to see what it
+            # *could* have negotiated, and a reviewer should see that the limits
+            # were evaluated rather than skipped.
+            standing = self._collect_constraints(
+                original_price_inr=original_price_inr,
+                cart_total_inr=cart_total_inr,
+                cost_price_inr=cost_price_inr,
+                product_max_discount_pct=product_max_discount_pct,
+                remaining_budget_inr=remaining_budget_inr,
+            )
+            headroom = min(standing, key=lambda c: c.cap_inr)
             return self._decision(
                 status=STATUS_PASSED,
                 applied_inr=0.0,
                 original_price_inr=original_price_inr,
                 requested_inr=0.0,
                 approved_ceiling_inr=0.0,
-                reason="No discount proposed.",
+                reason=(
+                    f"No discount proposed. Had one been requested, the binding bound would have "
+                    f"been '{headroom.name}' at ₹{max(0.0, headroom.cap_inr):,.2f}."
+                ),
                 binding_constraint="none",
-                constraints=[],
+                constraints=[c.as_dict(original_price_inr) for c in standing],
+                auto_cap_inr=max(0.0, min(headroom.cap_inr, original_price_inr)),
             )
 
         constraints = self._collect_constraints(
