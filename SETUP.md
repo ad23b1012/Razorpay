@@ -126,24 +126,83 @@ pulling a schema change does not require deleting anything.
 
 ---
 
-## 4. Webhooks (optional, only if demoing async capture)
+## 4. Webhooks (optional — skip unless you have time)
 
-Razorpay must be able to reach your backend, so this needs a public URL.
+**What they buy you:** if a shopper pays and then closes the tab before the app
+can confirm it, the browser never calls `/verify-payment` and the order would sit
+unpaid despite the money having moved. Razorpay calls the webhook regardless, and
+the handler captures the order from that. It is the safety net behind the happy
+path.
 
-1. Expose the backend with a tunnel (`ngrok http 8000`, `cloudflared`, or your
-   deployed URL).
-2. Dashboard → Settings → Webhooks → Add. URL is
-   `https://your-host/api/v1/checkout/webhook`. Subscribe to `payment.captured`
-   and `payment.failed`. Set a secret.
-3. Put the same secret in `backend/.env`:
+**The blocker:** Razorpay's servers call *you*. They cannot reach
+`http://localhost:8000`, so this needs a publicly reachable URL — a tunnel or a
+deployed backend. Nothing else in the project needs one.
+
+### Step 1 — get a public URL
+
+Install a tunnel (you have neither yet):
+
+```bash
+brew install ngrok
+```
+
+Then, with the backend already running on 8000:
+
+```bash
+ngrok http 8000
+```
+
+It prints a forwarding address like `https://a1b2-103-21-58-9.ngrok-free.app`.
+That host is your public base URL. It changes every time you restart ngrok on the
+free tier, so set the webhook up once you are ready to test rather than in
+advance.
+
+If you deploy the backend instead, use the deployed origin and skip the tunnel.
+
+### Step 2 — fill in the dashboard dialog
+
+| Field | What to enter |
+| :--- | :--- |
+| **Webhook URL** | `https://<your-public-host>/api/v1/checkout/webhook` — the path matters |
+| **Secret** | Any strong string you invent. Copy it; you need it again in step 3 |
+| **Alert Email** | Leave your own address |
+| **Active Events** | Tick **`payment.captured`** and **`payment.failed`**. Optionally `order.paid` |
+
+Only those events do anything. `payment.captured` and `order.paid` mark the order
+paid; `payment.failed` marks it failed unless the order is already captured, in
+which case it is deliberately ignored so a stale event cannot un-capture a real
+payment. Every other event is signature-checked and recorded in the audit trail
+without changing order state, so ticking more is harmless but pointless.
+
+### Step 3 — tell the backend the same secret
+
+In `backend/.env`, replace the placeholder with the exact secret you typed into
+the dashboard:
 
 ```
-RAZORPAY_WEBHOOK_SECRET=the_same_secret
+RAZORPAY_WEBHOOK_SECRET=the_same_secret_you_typed
 ```
 
-Unsigned or mismatched payloads are rejected with 400 — including Razorpay's own
-"test webhook" button if the secret does not match. Replays of the same event id
-are acknowledged without reprocessing.
+Restart the backend. The two must match character for character — the handler
+recomputes `HMAC-SHA256(raw_body, secret)` and compares it against the
+`X-Razorpay-Signature` header.
+
+### Step 4 — confirm it works
+
+Use the dashboard's own test-webhook button, or make a real test payment and
+watch the backend log. A good delivery logs
+`Signature-verified Razorpay webhook 'payment.captured' for order ord_… :
+captured_via_webhook`.
+
+**If deliveries fail with 400:** the secret does not match. That includes the
+dashboard's test button — it signs with whatever secret you saved, so a mismatch
+shows up there first.
+
+**If deliveries time out:** the tunnel is down, the backend is not running, or
+the URL is missing the `/api/v1/checkout/webhook` path.
+
+Replays of the same `X-Razorpay-Event-Id` are acknowledged without reprocessing,
+so Razorpay's retries cannot double-capture an order.
 
 ---
 

@@ -646,3 +646,91 @@ async def test_saved_policy_survives_a_restart():
         )
 
     guardrail_engine.max_discount_pct = settings.MAX_GLOBAL_DISCOUNT_PERCENT
+
+
+def _sign_webhook(raw: bytes) -> str:
+    import hmac, hashlib
+    from app.core.razorpay_client import razorpay_service
+    return hmac.new(razorpay_service.webhook_secret.encode(), raw, hashlib.sha256).hexdigest()
+
+
+@pytest.mark.asyncio
+async def test_webhook_captures_an_order_the_shopper_never_confirmed():
+    """The safety net: a shopper closes the tab after paying, the webhook finishes the job."""
+    import json as _json
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        created = (await ac.post("/api/v1/checkout/create-order", json={
+            "items": [{"product_id": "prod_gan_65w_charger", "quantity": 1}],
+            "session_id": "sess_webhook",
+        })).json()
+
+        payload = {
+            "event": "payment.captured",
+            "payload": {"payment": {"entity": {
+                "id": "pay_webhook_001",
+                "order_id": created["razorpay_order_id"],
+            }}},
+        }
+        raw = _json.dumps(payload).encode()
+
+        res = await ac.post(
+            "/api/v1/checkout/webhook",
+            content=raw,
+            headers={
+                "Content-Type": "application/json",
+                "X-Razorpay-Signature": _sign_webhook(raw),
+                "X-Razorpay-Event-Id": "evt_001",
+            },
+        )
+        assert res.status_code == 200
+        assert res.json()["outcome"] == "captured_via_webhook"
+
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Order).where(Order.razorpay_order_id == created["razorpay_order_id"])
+            )
+            order = result.scalar_one()
+            assert order.status == "captured"
+            assert order.razorpay_payment_id == "pay_webhook_001"
+
+
+@pytest.mark.asyncio
+async def test_late_failure_webhook_cannot_uncapture_a_paid_order():
+    """A stale failure event for an earlier attempt must not undo a real payment."""
+    import json as _json
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        created = (await ac.post("/api/v1/checkout/create-order", json={
+            "items": [{"product_id": "prod_gan_65w_charger", "quantity": 1}],
+            "session_id": "sess_late_fail",
+        })).json()
+
+        minted = (await ac.post("/api/v1/checkout/simulate-payment",
+                                json={"razorpay_order_id": created["razorpay_order_id"]})).json()
+        await ac.post("/api/v1/checkout/verify-payment", json={
+            "razorpay_order_id": created["razorpay_order_id"],
+            "razorpay_payment_id": minted["razorpay_payment_id"],
+            "razorpay_signature": minted["razorpay_signature"],
+        })
+
+        payload = {
+            "event": "payment.failed",
+            "payload": {"payment": {"entity": {
+                "id": "pay_old_attempt",
+                "order_id": created["razorpay_order_id"],
+            }}},
+        }
+        raw = _json.dumps(payload).encode()
+        res = await ac.post("/api/v1/checkout/webhook", content=raw, headers={
+            "Content-Type": "application/json",
+            "X-Razorpay-Signature": _sign_webhook(raw),
+            "X-Razorpay-Event-Id": "evt_late_fail",
+        })
+        assert res.json()["outcome"] == "ignored_failure_on_captured_order"
+
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Order).where(Order.razorpay_order_id == created["razorpay_order_id"])
+            )
+            assert result.scalar_one().status == "captured"

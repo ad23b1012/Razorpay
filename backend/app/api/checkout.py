@@ -203,15 +203,63 @@ async def handle_razorpay_webhook(
         if seen.scalar_one_or_none():
             return {"status": "ok", "event_processed": event_name, "duplicate": True}
 
+    # Act on the event, not just record it. A shopper who closes the tab between
+    # paying and returning never reaches /verify-payment, and without this the
+    # order would sit "created" forever despite the money having moved.
+    payment = (body.get("payload", {}).get("payment", {}) or {}).get("entity", {}) or {}
+    razorpay_order_id = payment.get("order_id")
+    order = None
+    outcome = "no_matching_order"
+
+    if razorpay_order_id:
+        result = await db.execute(
+            select(Order).where(Order.razorpay_order_id == razorpay_order_id)
+        )
+        order = result.scalar_one_or_none()
+
+    if order:
+        if event_name in ("payment.captured", "order.paid"):
+            if order.status == "captured":
+                outcome = "already_captured"
+            else:
+                order.status = "captured"
+                order.razorpay_payment_id = payment.get("id") or order.razorpay_payment_id
+                outcome = "captured_via_webhook"
+        elif event_name == "payment.failed":
+            # Never downgrade an order that is already paid: a late failure event
+            # for an earlier attempt must not un-capture a successful payment.
+            if order.status == "captured":
+                outcome = "ignored_failure_on_captured_order"
+            else:
+                order.status = "failed"
+                outcome = "marked_failed"
+        else:
+            outcome = "recorded_only"
+
     await record_audit_log(
         db=db,
         actor="razorpay_webhook",
         action_type=f"webhook_{event_name}",
-        reasoning=f"Processed a signature-verified Razorpay webhook: {event_name}.",
-        context_data={"event": event_name, "event_id": x_razorpay_event_id},
-        decision_payload=body.get("payload", {}),
+        reasoning=(
+            f"Signature-verified Razorpay webhook '{event_name}'"
+            + (f" for order {order.id}: {outcome}." if order else f": {outcome}.")
+        ),
+        context_data={
+            "event": event_name,
+            "event_id": x_razorpay_event_id,
+            "razorpay_order_id": razorpay_order_id,
+        },
+        decision_payload={"outcome": outcome, "order_id": order.id if order else None},
         guardrail_status="PASSED",
+        financial_impact_inr=order.total_amount_inr if order and outcome == "captured_via_webhook" else 0.0,
+        session_id=order.session_id if order else None,
     )
     await db.commit()
 
-    return {"status": "ok", "event_processed": event_name, "duplicate": False}
+    return {
+        "status": "ok",
+        "event_processed": event_name,
+        "duplicate": False,
+        "outcome": outcome,
+        "order_id": order.id if order else None,
+    }
