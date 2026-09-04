@@ -22,11 +22,12 @@ async def chat_with_buyer_agent(request: ConversationalChatRequest, db: AsyncSes
         db=db,
         message=request.message,
         session_id=request.session_id,
-        cart_items=request.cart_items
+        cart_items=request.cart_items,
+        history=request.history,
     )
 
     # Record every conversational interaction in the immutable audit trail
-    await record_audit_log(
+    audit_entry = await record_audit_log(
         db=db,
         actor="buyer_conversational_agent",
         action_type=f"chat_{result.get('action', 'NONE')}".lower(),
@@ -42,12 +43,19 @@ async def chat_with_buyer_agent(request: ConversationalChatRequest, db: AsyncSes
     )
     await db.commit()
 
+    cog_trace = result.get("cognitive_trace") or {}
+    if audit_entry:
+        cog_trace["audit_hash"] = audit_entry.verification_hash
+        cog_trace["audit_sequence"] = audit_entry.sequence
+
     return ConversationalChatResponse(
         reply=result["reply"],
+        voice_summary=result.get("voice_summary"),
         action=result.get("action"),
         action_payload=result.get("action_payload"),
         reasoning=result.get("reasoning"),
-        guardrail_status=result.get("guardrail_status", "PASSED")
+        guardrail_status=result.get("guardrail_status", "PASSED"),
+        cognitive_trace=cog_trace or None,
     )
 
 @router.post("/negotiate", response_model=AgentNegotiateResponse)

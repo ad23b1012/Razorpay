@@ -2,16 +2,19 @@
 
 :root {
   /* Razorpay Official Enterprise Design Tokens */
-  --rzp-blue: #2563EB;
-  --rzp-blue-hover: #1D4ED8;
+  --rzp-blue: #0C83FE;
+  --rzp-blue-hover: #0B72E6;
   --rzp-blue-light: #EFF6FF;
   --rzp-blue-subtle: #DBEAFE;
-  --rzp-blue-glow: rgba(37, 99, 235, 0.12);
+  --rzp-blue-glow: rgba(12, 131, 254, 0.15);
   
-  --rzp-navy: #0D121F;
-  --rzp-navy-light: #1E293B;
-  --rzp-dark-card: #0A0F1D;
-  --rzp-dark-border: #1E293B;
+  --rzp-navy: #0C2340;
+  --rzp-navy-light: #132238;
+  --rzp-navy-surface: #0F1D33;
+  --rzp-navy-border: #1E3557;
+  
+  --rzp-dark-card: #0C2340;
+  --rzp-dark-border: #1E3557;
   
   --rzp-mint: #059669;
   --rzp-mint-light: #ECFDF5;
@@ -29,7 +32,7 @@
   --bg-surface: #FFFFFF;
   --bg-subtle: #F1F5F9;
   
-  --text-main: #0D121F;
+  --text-main: #0C2340;
   --text-body: #334155;
   --text-muted: #64748B;
   --text-light: #94A3B8;
@@ -38,9 +41,9 @@
   --border-subtle: #F1F5F9;
 
   --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-card: 0 4px 20px -2px rgba(13, 18, 31, 0.06), 0 2px 6px -1px rgba(13, 18, 31, 0.03);
-  --shadow-float: 0 20px 40px -15px rgba(13, 18, 31, 0.12), 0 0 1px rgba(13, 18, 31, 0.1);
-  --shadow-btn: 0 4px 14px rgba(37, 99, 235, 0.3);
+  --shadow-card: 0 4px 20px -2px rgba(12, 35, 64, 0.05), 0 2px 6px -1px rgba(12, 35, 64, 0.03);
+  --shadow-float: 0 20px 40px -15px rgba(12, 35, 64, 0.12), 0 0 1px rgba(12, 35, 64, 0.08);
+  --shadow-btn: 0 4px 14px rgba(12, 131, 254, 0.35);
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -148,6 +151,27 @@ body {
 .rzp-clean-card:hover {
   box-shadow: var(--shadow-float);
   border-color: #CBD5E1;
+}
+
+/* Unified Signature Razorpay Hero Banner */
+.rzp-hero-banner {
+  background: linear-gradient(135deg, #0C2340 0%, #0F2A4A 60%, #0C2340 100%);
+  border: 1px solid rgba(12, 131, 254, 0.25);
+  border-radius: 20px;
+  padding: 32px 36px;
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -10px rgba(12, 35, 64, 0.25);
+}
+
+/* Razorpay High-Tech Telemetry Dark Panel */
+.rzp-dark-panel {
+  background: #0C2340;
+  border: 1px solid #1E3557;
+  border-radius: 16px;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px -5px rgba(12, 35, 64, 0.2);
 }
 
 /* Pill Badges */
@@ -356,20 +380,51 @@ input[type=range].rzp-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
 }
 
+/* Category filter tab pills */
+.rzp-filter-pill {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rzp-filter-pill:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0C2340;
+  transform: translateY(-1px);
+}
+
+.rzp-filter-pill.active {
+  background: #0C83FE !important;
+  border-color: #0C83FE !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(12, 131, 254, 0.3) !important;
+}
+
 /* Terminal & Code Block */
 .rzp-terminal-window {
-  background: #0A0F1D;
-  border: 1px solid #1E293B;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  background: #071526;
+  border: 1px solid #1E3557;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(12, 35, 64, 0.25);
   overflow: hidden;
   font-family: var(--font-mono);
 }
 
 .rzp-terminal-header {
-  background: #0F172A;
-  padding: 12px 16px;
-  border-bottom: 1px solid #1E293B;
+  background: #0C2340;
+  padding: 12px 18px;
+  border-bottom: 1px solid #1E3557;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -395,3 +450,72 @@ pre, code {
 .spin {
   animation: spin 0.9s linear infinite;
 }
+
+/* Typing dots animation for chat */
+.typing-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94A3B8;
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Pipeline stage entry animation */
+@keyframes stageSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pipeline glow pulse */
+@keyframes pipelineGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.3); }
+  50% { box-shadow: 0 0 12px 4px rgba(37, 99, 235, 0.15); }
+}
+
+/* Live dot animation */
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+  animation: pulse-dot-green 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+/* Chat message entry animation */
+@keyframes messageSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Guided demo content transition */
+@keyframes contentFade {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Number counter animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Glow border for pipeline active stage */
+.pipeline-active-glow {
+  animation: pipelineGlow 2s ease-in-out infinite;
+}
+

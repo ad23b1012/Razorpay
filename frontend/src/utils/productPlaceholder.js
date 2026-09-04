@@ -12,6 +12,7 @@
  */
 
 const THEMES = {
+  Smartphones: { from: "#EEF2FF", to: "#6366F1", ink: "#312E81", accent: "#FFFFFF" },
   Audio: { from: "#FEF3C7", to: "#F59E0B", ink: "#78350F", accent: "#FFFFFF" },
   Wearables: { from: "#DBEAFE", to: "#3B82F6", ink: "#1E3A8A", accent: "#FFFFFF" },
   Power: { from: "#D1FAE5", to: "#10B981", ink: "#065F46", accent: "#FFFFFF" },
@@ -21,6 +22,12 @@ const THEMES = {
 
 /** Simple, recognisable line art per category. Drawn on a 600x420 canvas. */
 const ARTWORK = {
+  Smartphones: (c) => `
+    <rect x="236" y="96" width="128" height="228" rx="26" fill="${c}"/>
+    <rect x="246" y="112" width="108" height="196" rx="18" fill="#FFFFFF" opacity="0.92"/>
+    <circle cx="300" cy="122" r="5" fill="#0D121F" opacity="0.35"/>
+    <rect x="282" y="296" width="36" height="4" rx="2" fill="#0D121F" opacity="0.3"/>`,
+
   Audio: (c) => `
     <path d="M190 235 v-35 a110 110 0 0 1 220 0 v35"
           fill="none" stroke="${c}" stroke-width="16" stroke-linecap="round"/>

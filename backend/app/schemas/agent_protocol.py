@@ -27,10 +27,13 @@ class ConversationalChatRequest(BaseModel):
     session_id: str
     cart_items: List[Dict[str, Any]] = Field(default_factory=list)
     customer_profile: Optional[Dict[str, Any]] = None
+    history: List[Dict[str, Any]] = Field(default_factory=list)
 
 class ConversationalChatResponse(BaseModel):
     reply: str
+    voice_summary: Optional[str] = None
     action: Optional[str] = None # "ADD_TO_CART", "APPLY_DISCOUNT", "TRIGGER_CHECKOUT", "SHOW_PRODUCTS"
     action_payload: Optional[Dict[str, Any]] = None
     reasoning: Optional[str] = None
     guardrail_status: str = "PASSED"
+    cognitive_trace: Optional[Dict[str, Any]] = None

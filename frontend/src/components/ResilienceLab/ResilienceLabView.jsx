@@ -55,14 +55,7 @@ export default function ResilienceLabView() {
     <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '40px 32px 100px', width: '100%', boxSizing: 'border-box' }}>
       
       {/* 1. Enterprise Hero Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0D121F 0%, #1E293B 100%)',
-        borderRadius: '20px',
-        padding: '36px 40px',
-        color: '#FFFFFF',
-        marginBottom: '32px',
-        boxShadow: '0 20px 40px -10px rgba(13, 18, 31, 0.2)',
-      }}>
+      <div className="rzp-hero-banner" style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
           <div style={{ maxWidth: '720px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
@@ -132,7 +125,7 @@ export default function ResilienceLabView() {
                 style={{
                   padding: '20px',
                   cursor: 'pointer',
-                  borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                  borderColor: isSelected ? '#0C83FE' : '#E2E8F0',
                   background: isSelected ? '#EFF6FF' : '#FFFFFF',
                   boxShadow: isSelected ? '0 10px 25px -5px rgba(37, 99, 235, 0.15)' : 'var(--shadow-card)',
                   transition: 'all 0.2s ease',
@@ -143,7 +136,7 @@ export default function ResilienceLabView() {
                   <span className={`pill-badge ${sc.badgeClass}`} style={{ fontSize: '10px' }}>
                     {sc.badge}
                   </span>
-                  <Icon size={18} color={isSelected ? '#2563EB' : '#94A3B8'} />
+                  <Icon size={18} color={isSelected ? '#0C83FE' : '#94A3B8'} />
                 </div>
                 <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#0D121F', marginBottom: '4px' }}>
                   {sc.title}
@@ -151,7 +144,7 @@ export default function ResilienceLabView() {
                 <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.4, marginBottom: '8px' }}>
                   {sc.description}
                 </p>
-                <div style={{ fontSize: '11px', color: isSelected ? '#2563EB' : '#94A3B8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '11px', color: isSelected ? '#0C83FE' : '#94A3B8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>{isSelected ? '✓ Scenario Selected' : 'Click to select scenario'}</span>
                 </div>
               </div>
@@ -245,7 +238,7 @@ export default function ResilienceLabView() {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <Activity size={28} color="#2563EB" />
+                <Activity size={28} color="#0C83FE" />
               </div>
               <div style={{ maxWidth: '380px' }}>
                 <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0D121F', marginBottom: '4px' }}>
@@ -285,7 +278,7 @@ export default function ResilienceLabView() {
                 padding: '16px',
                 minWidth: 0,
               }}>
-                <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
+                <div style={{ fontSize: '11px', color: '#0C83FE', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
                   [STAGE 2] AUTONOMOUS CIRCUIT-BREAKER ACTIONS EXECUTED
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>

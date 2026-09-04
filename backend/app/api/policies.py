@@ -11,6 +11,7 @@ from app.core.guardrails import guardrail_engine
 from app.schemas.checkout import CreateOrderRequest
 from app.services import approvals as approvals_service
 from app.services import order_service
+from app.core.audit_trail import record_audit_log
 
 logger = logging.getLogger("razoragent.policies")
 
@@ -73,6 +74,10 @@ async def update_guardrail_policy(data: Dict[str, Any], db: AsyncSession = Depen
         policy = GuardrailPolicy(id="pol_default_merchant", name="Custom Guardrail Policy")
         db.add(policy)
 
+    old_max = policy.max_global_discount_percent
+    old_threshold = policy.approval_threshold_inr
+    old_budget = policy.daily_budget_inr
+
     if "max_global_discount_percent" in data:
         policy.max_global_discount_percent = float(data["max_global_discount_percent"])
         guardrail_engine.max_discount_pct = policy.max_global_discount_percent
@@ -84,6 +89,27 @@ async def update_guardrail_policy(data: Dict[str, Any], db: AsyncSession = Depen
     if "min_cart_value_inr" in data:
         policy.min_cart_value_inr = float(data["min_cart_value_inr"])
         guardrail_engine.min_cart_value_inr = policy.min_cart_value_inr
+
+    await record_audit_log(
+        db=db,
+        actor="merchant_admin",
+        action_type="policy_guardrail_updated",
+        reasoning=f"Merchant updated financial guardrails: max discount {old_max}% -> {policy.max_global_discount_percent}%, approval gate ₹{old_threshold} -> ₹{policy.approval_threshold_inr}, budget ₹{old_budget} -> ₹{policy.daily_budget_inr}.",
+        context_data={
+            "previous_policy": {
+                "max_global_discount_percent": old_max,
+                "approval_threshold_inr": old_threshold,
+                "daily_budget_inr": old_budget,
+            },
+            "new_policy": {
+                "max_global_discount_percent": policy.max_global_discount_percent,
+                "approval_threshold_inr": policy.approval_threshold_inr,
+                "daily_budget_inr": policy.daily_budget_inr,
+            }
+        },
+        decision_payload={"policy_id": policy.id},
+        guardrail_status="PASSED",
+    )
 
     await db.commit()
     await db.refresh(policy)

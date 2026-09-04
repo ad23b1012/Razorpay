@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ShoppingCart, Info, Check, X, ArrowRight, ShieldCheck, CreditCard, Globe, Headphones, Zap, TrendingUp } from 'lucide-react';
 import { productPlaceholder, handleImageError } from '../../utils/productPlaceholder';
+import AgentPipelineVisualization from '../AgentPipelineVisualization';
 
 export default function StorefrontView({
   products,
   loading,
+  lastAgentEvent,
   onAddToCart,
   onOpenSpecs,
   onOpenAiBuyer,
+  onOpenDemo,
 }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [audienceIndex, setAudienceIndex] = useState(0);
@@ -46,7 +49,7 @@ export default function StorefrontView({
     return () => clearInterval(timer);
   }, []);
 
-  const categories = ['All', 'Audio', 'Wearables', 'Power', 'Accessories'];
+  const categories = ['All', 'Smartphones', 'Audio', 'Wearables', 'Power', 'Accessories'];
 
   const filteredProducts = selectedCategory === 'All'
     ? products
@@ -55,9 +58,6 @@ export default function StorefrontView({
   const activeAudienceObj = audiences.find(a => a.id === activeAudienceTab) || audiences[0];
 
   return (
-    // A flex column with explicit ordering, so the live demo sits near the top
-    // where a first-time visitor lands, while the marketing sections below keep
-    // their original markup untouched.
     <div style={{
       maxWidth: '1360px',
       margin: '0 auto',
@@ -66,25 +66,18 @@ export default function StorefrontView({
       flexDirection: 'column',
     }}>
 
-      {/* 0. Orientation band — what this is, and where to start */}
-      <div style={{
-        order: 1,
-        background: 'linear-gradient(135deg, #0D121F 0%, #1E293B 100%)',
-        borderRadius: '20px',
-        padding: '28px 32px',
-        marginBottom: '32px',
-        color: '#FFFFFF',
-      }}>
+      {/* 0. Orientation band — Razorpay AI Challenge Track 01 */}
+      <div className="rzp-hero-banner" style={{ marginBottom: '28px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
-          <div style={{ maxWidth: '620px' }}>
+          <div style={{ maxWidth: '640px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
-              <span className="pill-badge pill-blue" style={{ fontSize: '11px', fontWeight: 700 }}>
+              <span className="pill-badge pill-blue" style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em' }}>
                 RAZORPAY AI CHALLENGE · TRACK 01
               </span>
               <span style={{ fontSize: '12px', color: '#94A3B8' }}>AI Growth &amp; Agentic Commerce</span>
             </div>
 
-            <h2 style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.25, marginBottom: '10px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.25, marginBottom: '10px' }}>
               A storefront an AI agent can buy from — where every rupee it moves is
               bounded, gated and auditable.
             </h2>
@@ -111,16 +104,189 @@ export default function StorefrontView({
             >
               <ShoppingCart size={15} /> Browse the catalog
             </button>
-            <span style={{ fontSize: '11px', color: '#64748B', textAlign: 'center', lineHeight: 1.5 }}>
-              Machine buyers: see the <strong style={{ color: '#94A3B8' }}>A2A Protocol</strong> tab
+            {onOpenDemo && (
+              <button
+                onClick={onOpenDemo}
+                className="rzp-btn-outline"
+                style={{ padding: '10px 18px', fontSize: '13px', justifyContent: 'center', background: 'rgba(12,131,254,0.12)', color: '#60A5FA', borderColor: 'rgba(12,131,254,0.35)' }}
+              >
+                🎯 Replay Guided Tour
+              </button>
+            )}
+            <span style={{ fontSize: '11px', color: '#94A3B8', textAlign: 'center', lineHeight: 1.5 }}>
+              Machine buyers: see the <strong style={{ color: '#60A5FA' }}>A2A Protocol</strong> tab
             </span>
           </div>
         </div>
       </div>
 
-      {/* 1. Official Hero Section (Screenshots 1, 2, 3) */}
-      <div style={{ order: 3, marginBottom: '40px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#2563EB', marginBottom: '12px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+      {/* 1. Live Real-Time Agentic Pipeline Visualization */}
+      <AgentPipelineVisualization lastAgentEvent={lastAgentEvent} />
+
+      {/* 2. Live Agent-Transactable Product Storefront */}
+      <div id="demo-catalog" style={{ paddingTop: '8px', marginBottom: '64px', scrollMarginTop: '90px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          marginBottom: '28px',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}>
+          <div>
+            <span className="pill-badge pill-blue" style={{ marginBottom: '8px' }}>
+              DEMO STOREFRONT
+            </span>
+            <h2 style={{ fontSize: '32px', fontWeight: 800, color: '#0C2340', letterSpacing: '-0.02em' }}>
+              Agent-Transactable D2C Catalog
+            </h2>
+            <p style={{ fontSize: '14px', color: '#64748B' }}>
+              Test checkout as a human or instruct the AI Buyer Assistant.
+            </p>
+          </div>
+
+          {/* Category Filter Pills using unified rzp-filter-pill */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`rzp-filter-pill ${selectedCategory === cat ? 'active' : ''}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product Cards Grid */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px', color: '#64748B' }}>
+            <div className="pulse-status-green" style={{ width: '12px', height: '12px', margin: '0 auto 12px' }} />
+            <div>Loading verified catalog...</div>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 24px', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1', color: '#64748B' }}>
+            <p style={{ fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>No products found in category "{selectedCategory}"</p>
+            <button onClick={() => setSelectedCategory('All')} className="rzp-btn-blue" style={{ padding: '6px 14px', fontSize: '12px' }}>
+              View All Products
+            </button>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px',
+          }}>
+            {filteredProducts.map((product) => {
+              const savingsInr = product.mrp_inr - product.price_inr;
+              const savingsPct = Math.round((savingsInr / product.mrp_inr) * 100);
+
+              return (
+                <div
+                  key={product.id}
+                  className="rzp-clean-card"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '210px',
+                    backgroundColor: '#F8FAFC',
+                    overflow: 'hidden',
+                  }}>
+                    <img
+                      src={product.image_url || productPlaceholder(product.name, product.category)}
+                      alt={product.name}
+                      loading="lazy"
+                      onError={(e) => handleImageError(e, product.name, product.category)}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transition: 'transform 0.3s ease',
+                      }}
+                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.04)'}
+                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    />
+                    <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
+                      <span className="pill-badge pill-blue">{product.category}</span>
+                    </div>
+                    {savingsPct > 0 && (
+                      <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                        <span className="pill-badge pill-mint">{savingsPct}% OFF</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0C2340', marginBottom: '6px' }}>
+                      {product.name}
+                    </h3>
+                    <p style={{
+                      fontSize: '13px',
+                      color: '#64748B',
+                      marginBottom: '16px',
+                      lineHeight: 1.5,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}>
+                      {product.description}
+                    </p>
+
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '8px',
+                      marginBottom: '18px',
+                      marginTop: 'auto',
+                    }}>
+                      <span style={{ fontSize: '22px', fontWeight: 800, color: '#0C2340' }}>
+                        ₹{product.price_inr.toLocaleString('en-IN')}
+                      </span>
+                      <span style={{ fontSize: '13px', color: '#94A3B8', textDecoration: 'line-through' }}>
+                        ₹{product.mrp_inr.toLocaleString('en-IN')}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#059669', fontWeight: 700 }}>
+                        Save ₹{savingsInr.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => onAddToCart(product)}
+                        className="rzp-btn-blue"
+                        style={{ flex: 1, padding: '10px 14px', fontSize: '13px' }}
+                      >
+                        <ShoppingCart size={15} />
+                        Add to Cart
+                      </button>
+
+                      <button
+                        onClick={() => onOpenSpecs(product)}
+                        className="rzp-btn-outline"
+                        style={{ padding: '10px 12px' }}
+                      >
+                        <Info size={15} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 3. Official Platform Showcase Section */}
+      <div style={{ marginBottom: '40px' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0C83FE', marginBottom: '12px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
           Accept Agentic & International Payments
         </div>
 
@@ -149,7 +315,7 @@ export default function StorefrontView({
                 style={{
                   fontSize: '56px',
                   fontWeight: 900,
-                  color: '#2563EB',
+                  color: '#0C83FE',
                   letterSpacing: '-0.04em',
                   lineHeight: 1.08,
                 }}
@@ -184,7 +350,6 @@ export default function StorefrontView({
 
       {/* 2. Interactive Signature Comparison Component (Screenshots 1, 2, 3) */}
       <div style={{
-        order: 4,
         background: 'linear-gradient(135deg, #1E293B 0%, #0D121F 100%)',
         borderRadius: '24px',
         overflow: 'hidden',
@@ -247,7 +412,7 @@ export default function StorefrontView({
                     setAudienceIndex(audiences.findIndex(a => a.id === aud.id));
                   }}
                   style={{
-                    background: activeAudienceTab === aud.id ? '#2563EB' : 'transparent',
+                    background: activeAudienceTab === aud.id ? '#0C83FE' : 'transparent',
                     color: '#FFFFFF',
                     border: 'none',
                     borderRadius: '6px',
@@ -311,22 +476,22 @@ export default function StorefrontView({
                 </div>
 
                 <div style={{ fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ color: '#2563EB', fontWeight: 800 }}>✓</span>
+                  <span style={{ color: '#0C83FE', fontWeight: 800 }}>✓</span>
                   <div><strong>90–95%</strong></div>
                 </div>
 
                 <div style={{ fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ color: '#2563EB', fontWeight: 800 }}>✓</span>
+                  <span style={{ color: '#0C83FE', fontWeight: 800 }}>✓</span>
                   <div>135 currencies, global cards, Apple Pay, Google Wallet* & bank transfers</div>
                 </div>
 
                 <div style={{ fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ color: '#2563EB', fontWeight: 800 }}>✓</span>
+                  <span style={{ color: '#0C83FE', fontWeight: 800 }}>✓</span>
                   <div>1% (bank transfers)<br/>Up to 3%* (cards)</div>
                 </div>
 
                 <div style={{ fontSize: '12px', color: '#334155', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                  <span style={{ color: '#2563EB', fontWeight: 800 }}>✓</span>
+                  <span style={{ color: '#0C83FE', fontWeight: 800 }}>✓</span>
                   <div>Always-on India-based support</div>
                 </div>
               </div>
@@ -381,7 +546,7 @@ export default function StorefrontView({
       </div>
 
       {/* Brand Trust Marquee */}
-      <div className="marquee-wrapper" style={{ order: 5, marginBottom: '64px', padding: '12px 0', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+      <div className="marquee-wrapper" style={{ marginBottom: '64px', padding: '12px 0', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
         <div className="marquee-track">
           {['Flipkart', 'Swiggy', 'MakeMyTrip', 'Policybazaar', 'Nykaa', 'CRED', 'Zerodha', 'BookMyShow', 'Zomato', 'Urban Company', 'Flipkart', 'Swiggy', 'MakeMyTrip', 'Policybazaar', 'Nykaa', 'CRED', 'Zerodha', 'BookMyShow'].map((brand, i) => (
             <span key={i} style={{ fontSize: '14px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.04em' }}>
@@ -392,7 +557,7 @@ export default function StorefrontView({
       </div>
 
       {/* 3. 3-Card Feature Grid (From Screenshot 4) */}
-      <div style={{ order: 6, marginBottom: '72px' }}>
+      <div style={{ marginBottom: '72px' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -586,169 +751,6 @@ export default function StorefrontView({
             Know More →
           </button>
         </div>
-      </div>
-
-      {/* 4. Live Agent-Transactable Product Storefront */}
-      <div id="demo-catalog" style={{ order: 2, paddingTop: '8px', marginBottom: '72px', scrollMarginTop: '90px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          marginBottom: '32px',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}>
-          <div>
-            <span className="pill-badge pill-blue" style={{ marginBottom: '8px' }}>
-              DEMO STOREFRONT
-            </span>
-            <h2 style={{ fontSize: '32px', fontWeight: 800, color: '#0D121F', letterSpacing: '-0.02em' }}>
-              Agent-Transactable D2C Catalog
-            </h2>
-            <p style={{ fontSize: '14px', color: '#64748B' }}>
-              Test checkout as a human or instruct the AI Buyer Assistant.
-            </p>
-          </div>
-
-          {/* Category Filter Pills */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: selectedCategory === cat ? '#0D121F' : '#F1F5F9',
-                  color: selectedCategory === cat ? '#FFFFFF' : '#475569',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Product Cards Grid */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#64748B' }}>
-            Loading catalog...
-          </div>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '24px',
-          }}>
-            {filteredProducts.map((product) => {
-              const savingsInr = product.mrp_inr - product.price_inr;
-              const savingsPct = Math.round((savingsInr / product.mrp_inr) * 100);
-
-              return (
-                <div
-                  key={product.id}
-                  className="rzp-clean-card"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '210px',
-                    backgroundColor: '#F8FAFC',
-                    overflow: 'hidden',
-                  }}>
-                    <img
-                      src={product.image_url || productPlaceholder(product.name, product.category)}
-                      alt={product.name}
-                      loading="lazy"
-                      onError={(e) => handleImageError(e, product.name, product.category)}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        transition: 'transform 0.3s ease',
-                      }}
-                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.04)'}
-                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                    />
-                    <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
-                      <span className="pill-badge pill-dark">{product.category}</span>
-                    </div>
-                    {savingsPct > 0 && (
-                      <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
-                        <span className="pill-badge pill-mint">{savingsPct}% OFF</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0D121F', marginBottom: '6px' }}>
-                      {product.name}
-                    </h3>
-                    <p style={{
-                      fontSize: '13px',
-                      color: '#64748B',
-                      marginBottom: '16px',
-                      lineHeight: 1.5,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}>
-                      {product.description}
-                    </p>
-
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      gap: '8px',
-                      marginBottom: '18px',
-                      marginTop: 'auto',
-                    }}>
-                      <span style={{ fontSize: '22px', fontWeight: 800, color: '#0D121F' }}>
-                        ₹{product.price_inr.toLocaleString('en-IN')}
-                      </span>
-                      <span style={{ fontSize: '13px', color: '#94A3B8', textDecoration: 'line-through' }}>
-                        ₹{product.mrp_inr.toLocaleString('en-IN')}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#059669', fontWeight: 700 }}>
-                        Save ₹{savingsInr.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => onAddToCart(product)}
-                        className="rzp-btn-blue"
-                        style={{ flex: 1, padding: '10px 14px', fontSize: '13px' }}
-                      >
-                        <ShoppingCart size={15} />
-                        Add to Cart
-                      </button>
-
-                      <button
-                        onClick={() => onOpenSpecs(product)}
-                        className="rzp-btn-outline"
-                        style={{ padding: '10px 12px' }}
-                      >
-                        <Info size={15} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

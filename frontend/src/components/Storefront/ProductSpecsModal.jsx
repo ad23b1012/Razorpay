@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Cpu, Tag, Zap, ShieldCheck } from 'lucide-react';
+import { productPlaceholder, handleImageError } from '../../utils/productPlaceholder';
 
 export default function ProductSpecsModal({ product, onClose, onAddToCart }) {
   if (!product) return null;
@@ -38,8 +39,9 @@ export default function ProductSpecsModal({ product, onClose, onAddToCart }) {
         </div>
 
         <img
-          src={product.image_url}
+          src={product.image_url || productPlaceholder(product.name, product.category)}
           alt={product.name}
+          onError={(e) => handleImageError(e, product.name, product.category)}
           style={{
             width: '100%',
             height: '200px',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Trash2, Plus, Minus, ShieldCheck, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
+import { productPlaceholder, handleImageError } from '../../utils/productPlaceholder';
 
 export default function CartDrawer({
   isOpen,
@@ -101,8 +102,9 @@ export default function CartDrawer({
                 }}
               >
                 <img
-                  src={item.image_url}
+                  src={item.image_url || productPlaceholder(item.name, item.category)}
                   alt={item.name}
+                  onError={(e) => handleImageError(e, item.name, item.category)}
                   style={{
                     width: '60px',
                     height: '60px',

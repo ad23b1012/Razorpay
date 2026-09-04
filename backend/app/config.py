@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # LLM / AI Configuration (Google Gemini)
     GEMINI_API_KEY: Optional[str] = Field(default=None, validation_alias="GEMINI_API_KEY")
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
     
     # Database Configuration (Supabase PostgreSQL or local SQLite fallback)
     SUPABASE_DATABASE_URL: Optional[str] = Field(default=None, validation_alias="SUPABASE_DATABASE_URL")

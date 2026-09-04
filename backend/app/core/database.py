@@ -7,7 +7,15 @@ from app.config import settings
 logger = logging.getLogger("razoragent.db")
 
 # Determine active database URL (Supabase Postgres or local SQLite)
-db_url = settings.SUPABASE_DATABASE_URL or settings.DATABASE_URL
+raw_supabase_url = settings.SUPABASE_DATABASE_URL
+if raw_supabase_url and raw_supabase_url.startswith(("http://", "https://")):
+    logger.warning(
+        "⚠️  SUPABASE_DATABASE_URL is set to an HTTPS Project URL, but PostgreSQL needs a 'postgresql://' connection string. "
+        "Falling back to local SQLite. In Supabase Dashboard -> Project Settings -> Database -> Connection String (URI)."
+    )
+    raw_supabase_url = None
+
+db_url = raw_supabase_url or settings.DATABASE_URL
 
 # Fix SQLAlchemy async prefix if Supabase url is standard postgresql://
 if db_url.startswith("postgresql://"):
@@ -29,6 +37,7 @@ else:
         "pool_timeout": 30,
         "pool_recycle": 1800,
         "pool_pre_ping": True,
+        "connect_args": {"ssl": "require"},
     })
 
 engine = create_async_engine(db_url, **engine_kwargs)

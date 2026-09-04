@@ -40,7 +40,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
               color: '#0D121F',
               fontStyle: 'italic',
             }}>
-              Razor<span style={{ color: '#2563EB' }}>pay</span>
+              Razor<span style={{ color: '#0C83FE' }}>pay</span>
             </span>
           </div>
 
@@ -59,7 +59,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                   border: 'none',
                   fontSize: '14px',
                   fontWeight: 600,
-                  color: activeTab === 'storefront' ? '#2563EB' : '#334155',
+                  color: activeTab === 'storefront' ? '#0C83FE' : '#334155',
                   padding: '8px 0',
                   cursor: 'pointer',
                   position: 'relative',
@@ -76,7 +76,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                     left: 0,
                     right: 0,
                     height: '2.5px',
-                    backgroundColor: '#2563EB',
+                    backgroundColor: '#0C83FE',
                     borderRadius: '2px',
                   }} />
                 )}
@@ -107,7 +107,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                   </div>
                   <div
                     onClick={() => { openAiBuyer(); setDropdownOpen(false); }}
-                    style={{ fontSize: '13px', fontWeight: 600, color: '#2563EB', cursor: 'pointer' }}
+                    style={{ fontSize: '13px', fontWeight: 600, color: '#0C83FE', cursor: 'pointer' }}
                   >
                     Agent Studio (Conversational Buyer)
                   </div>
@@ -129,7 +129,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                 border: 'none',
                 fontSize: '14px',
                 fontWeight: activeTab === 'growth' ? 600 : 500,
-                color: activeTab === 'growth' ? '#2563EB' : '#334155',
+                color: activeTab === 'growth' ? '#0C83FE' : '#334155',
                 padding: '8px 0',
                 cursor: 'pointer',
                 position: 'relative',
@@ -143,7 +143,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                   left: 0,
                   right: 0,
                   height: '2.5px',
-                  backgroundColor: '#2563EB',
+                  backgroundColor: '#0C83FE',
                   borderRadius: '2px',
                 }} />
               )}
@@ -157,7 +157,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                 border: 'none',
                 fontSize: '14px',
                 fontWeight: activeTab === 'safety' ? 600 : 500,
-                color: activeTab === 'safety' ? '#2563EB' : '#334155',
+                color: activeTab === 'safety' ? '#0C83FE' : '#334155',
                 padding: '8px 0',
                 cursor: 'pointer',
                 position: 'relative',
@@ -171,7 +171,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                   left: 0,
                   right: 0,
                   height: '2.5px',
-                  backgroundColor: '#2563EB',
+                  backgroundColor: '#0C83FE',
                   borderRadius: '2px',
                 }} />
               )}
@@ -185,7 +185,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                 border: 'none',
                 fontSize: '14px',
                 fontWeight: activeTab === 'resilience' ? 600 : 500,
-                color: activeTab === 'resilience' ? '#2563EB' : '#334155',
+                color: activeTab === 'resilience' ? '#0C83FE' : '#334155',
                 padding: '8px 0',
                 cursor: 'pointer',
                 position: 'relative',
@@ -199,7 +199,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                   left: 0,
                   right: 0,
                   height: '2.5px',
-                  backgroundColor: '#2563EB',
+                  backgroundColor: '#0C83FE',
                   borderRadius: '2px',
                 }} />
               )}
@@ -213,7 +213,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                 border: 'none',
                 fontSize: '14px',
                 fontWeight: activeTab === 'protocol' ? 600 : 500,
-                color: activeTab === 'protocol' ? '#2563EB' : '#334155',
+                color: activeTab === 'protocol' ? '#0C83FE' : '#334155',
                 padding: '8px 0',
                 cursor: 'pointer',
                 position: 'relative',
@@ -227,7 +227,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                   left: 0,
                   right: 0,
                   height: '2.5px',
-                  backgroundColor: '#2563EB',
+                  backgroundColor: '#0C83FE',
                   borderRadius: '2px',
                 }} />
               )}
@@ -253,14 +253,14 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
               padding: '7px 14px',
               fontSize: '13px',
               fontWeight: 600,
-              color: '#2563EB',
+              color: '#0C83FE',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
             }}
           >
-            <Sparkles size={14} color="#2563EB" />
+            <Sparkles size={14} color="#0C83FE" />
             AI Buyer
           </button>
 

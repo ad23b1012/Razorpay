@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Dict, Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
@@ -36,11 +36,33 @@ async def get_merchant_growth_metrics(db: AsyncSession = Depends(get_db)):
     metrics = await growth_agent.get_growth_metrics(db)
     return GrowthMetricsResponse(**metrics)
 
+@router.post("/simulate-traffic")
+async def simulate_traffic_cohort(data: Dict[str, Any] = None, db: AsyncSession = Depends(get_db)):
+    """
+    Simulates a cohort of concurrent shoppers through the 50% holdout experiment.
+    Demonstrates real-time incremental lift calculation and A/B statistical divergence in real time.
+    """
+    cohort_size = int((data or {}).get("cohort_size", 50))
+    result = await growth_agent.simulate_traffic_cohort(db=db, count=cohort_size)
+    return result
+
 @router.get("/campaigns")
 async def get_active_campaigns(db: AsyncSession = Depends(get_db)):
     """Fetches all active growth campaigns."""
     result = await db.execute(select(Campaign))
     return result.scalars().all()
+
+@router.post("/campaigns/{campaign_id}/toggle")
+async def toggle_growth_campaign(campaign_id: str, db: AsyncSession = Depends(get_db)):
+    """Toggles campaign between active and paused states."""
+    result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    camp = result.scalar_one_or_none()
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    camp.is_active = not camp.is_active
+    await db.commit()
+    await db.refresh(camp)
+    return camp
 
 @router.post("/campaigns")
 async def create_growth_campaign(data: Dict[str, Any], db: AsyncSession = Depends(get_db)):

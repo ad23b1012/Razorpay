@@ -15,6 +15,30 @@ logger = logging.getLogger("razoragent.seed")
 
 SEED_PRODUCTS = [
     {
+        "id": "prod_nexus_neo_5g",
+        "name": "Nexus Neo 5G Smartphone (8GB/256GB)",
+        "slug": "nexus-neo-5g-smartphone",
+        "category": "Smartphones",
+        "description": "Premium 5G smartphone with 6.7\" 120Hz FHD+ AMOLED Display, Snapdragon 7s Gen 2, 50MP Sony OIS triple camera, 5000mAh battery with 68W TurboCharge, and clean Android 15.",
+        "price_inr": 18999.00,
+        "cost_price_inr": 13500.00,
+        "mrp_inr": 24999.00,
+        "stock_quantity": 45,
+        "is_active": True,
+        "image_url": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&auto=format&fit=crop&q=80",
+        "agent_readable_specs": {
+            "display": "6.7 inch 120Hz AMOLED (1000 nits)",
+            "processor": "Snapdragon 7s Gen 2 (5G)",
+            "camera": "50MP Sony IMX882 OIS + 8MP Ultra-wide",
+            "battery": "5000mAh with 68W Fast Charge",
+            "ram_storage": "8GB LPDDR4X + 256GB UFS 2.2",
+            "5g_bands": "13 5G Bands supported",
+            "os": "Clean Android 15"
+        },
+        "upsell_eligible_product_ids": ["prod_gan_65w_charger", "prod_hard_travel_case"],
+        "max_agent_discount_percent": 12.0
+    },
+    {
         "id": "prod_aura_anc_pro",
         "name": "Aura Pro Wireless ANC Headphones",
         "slug": "aura-pro-anc-headphones",
