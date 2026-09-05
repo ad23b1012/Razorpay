@@ -82,40 +82,104 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openCart, o
                 )}
               </button>
 
-              {/* Dropdown Menu Card (From Screenshot 1) */}
+              {/* Dropdown Menu Card */}
               {dropdownOpen && (
                 <div style={{
                   position: 'absolute',
-                  top: '40px',
+                  top: '42px',
                   left: '-12px',
                   background: '#FFFFFF',
                   border: '1px solid #E2E8F0',
                   borderRadius: '12px',
                   boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.12)',
-                  padding: '12px 16px',
-                  minWidth: '220px',
+                  padding: '8px',
+                  minWidth: '240px',
                   zIndex: 200,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '4px',
                 }}>
                   <div
                     onClick={() => { setActiveTab('storefront'); setDropdownOpen(false); }}
-                    style={{ fontSize: '13px', fontWeight: 600, color: '#0D121F', cursor: 'pointer' }}
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: activeTab === 'storefront' ? 700 : 500,
+                      color: activeTab === 'storefront' ? '#0C83FE' : '#334155',
+                      background: activeTab === 'storefront' ? '#F0F7FF' : 'transparent',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'storefront') e.currentTarget.style.background = '#F8FAFC';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'storefront') e.currentTarget.style.background = 'transparent';
+                    }}
                   >
-                    Agentic Payments (Storefront)
+                    <span>Agentic Payments (Storefront)</span>
+                    {activeTab === 'storefront' && (
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#0C83FE' }} />
+                    )}
                   </div>
+
                   <div
                     onClick={() => { openAiBuyer(); setDropdownOpen(false); }}
-                    style={{ fontSize: '13px', fontWeight: 600, color: '#0C83FE', cursor: 'pointer' }}
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      color: '#334155',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#F8FAFC';
+                      e.currentTarget.style.color = '#0C83FE';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#334155';
+                    }}
                   >
-                    Agent Studio (Conversational Buyer)
+                    <span>Agent Studio (Conversational Buyer)</span>
+                    <span style={{ fontSize: '10px', background: '#EFF6FF', color: '#0C83FE', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>DRAWER</span>
                   </div>
+
                   <div
                     onClick={() => { setActiveTab('growth'); setDropdownOpen(false); }}
-                    style={{ fontSize: '13px', fontWeight: 600, color: '#0D121F', cursor: 'pointer' }}
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: activeTab === 'growth' ? 700 : 500,
+                      color: activeTab === 'growth' ? '#0C83FE' : '#334155',
+                      background: activeTab === 'growth' ? '#F0F7FF' : 'transparent',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'growth') e.currentTarget.style.background = '#F8FAFC';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'growth') e.currentTarget.style.background = 'transparent';
+                    }}
                   >
-                    Growth Engine (Revenue Uplift)
+                    <span>Growth Engine (Revenue Uplift)</span>
+                    {activeTab === 'growth' && (
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#0C83FE' }} />
+                    )}
                   </div>
                 </div>
               )}
