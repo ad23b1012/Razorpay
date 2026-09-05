@@ -467,8 +467,36 @@ class BuyerAgent:
         # Explicit add-to-cart intent (e.g. "add headphones to cart", "add the charger")
         add_intent = any(w in lowered for w in ["add to cart", "add the", "add it", "add this", "i want", "i'll take", "get me", "cart me", "daal do", "daalo", "add kardo", "kardo", "le lo"])
 
-        # Smartphone / mobile specific queries
-        if any(w in lowered for w in ["mobile", "phone", "smartphone", "nexus", "20k", "22k", "25k", "hazaar"]):
+        # Audio / Headphones / Earphones (Evaluated BEFORE phones so "headphones" never matches "phone")
+        if any(w in lowered for w in ["headphone", "headphones", "earphone", "earphones", "audio", "anc", "tws", "earbud", "earbuds", "noise cancel", "noise cancellation"]):
+            audio_items = [p.id for p in products if p.category == "Audio"]
+            primary_id = audio_items[0] if audio_items else None
+            if add_intent and primary_id:
+                return _finalize({
+                    "reply": "Arre waah! Maine Aura Pro Wireless ANC Headphones (₹7,999) aapke cart me daal diya hai! Isme 42dB noise cancellation aur 38 hours ka battery backup milta hai. Ready to checkout?" if is_hi else "You got it! I've added the Aura Pro ANC Headphones (₹7,999) to your cart! You're going to love the 42dB noise cancellation and punchy sound. Ready to checkout, or looking for something else?",
+                    "voice_summary": "Aura Pro ANC Headphones aapke cart me add ho gaye hain!" if is_hi else "You got it! The Aura Pro ANC Headphones are in your cart for ₹7,999. Ready to checkout?",
+                    "action": "ADD_TO_CART",
+                    "action_payload": {"product_id": primary_id, "product_ids": audio_items},
+                    "reasoning": "Detected add-to-cart intent for Audio category. Added flagship Aura Pro ANC.",
+                    "guardrail_status": "PASSED"
+                })
+            return _finalize({
+                "reply": "Agar aapko shaandar sound aur shanti chahiye, toh hamare flagship **Aura Pro ANC Headphones** sirf ₹7,999 (MRP ₹12,999) me aapke budget me bilkul fit baithte hain! Inme 42dB Active Noise Cancellation hai jo saara shor gayab kar deta hai, custom beryllium drivers se jabardast bass, aur 38 ghante ki battery life. Kya inhe aapke cart me add kar doon?" if is_hi else "If you love immersive sound, you'll adore our flagship Aura Pro ANC Headphones at ₹7,999 (MRP ₹12,999). They pack 42dB active noise cancellation to silence background chatter and custom beryllium drivers for deep, punchy bass with 38 hours of playtime. Shall I pop them into your cart?",
+                "voice_summary": "Hamare flagship Aura Pro ANC Headphones sirf ₹7,999 me available hain with 42dB noise cancellation! Kya inhe cart me add kar doon?" if is_hi else "Our flagship Aura Pro ANC Headphones are fantastic! 42dB noise cancellation and punchy bass for ₹7,999. Shall I add them to your cart?",
+                "action": "SHOW_PRODUCTS",
+                "action_payload": {"product_ids": audio_items, "product_id": primary_id},
+                "reasoning": "Queried Audio category. Recommended Aura Pro ANC with consultative tone.",
+                "guardrail_status": "PASSED"
+            })
+
+        # Smartphone / mobile specific queries (word boundary so "headphone" or "earphone" never matches)
+        is_phone_query = (
+            any(w in lowered for w in ["mobile", "smartphone", "smartphones", "nexus"]) or
+            bool(re.search(r"\bphones?\b", lowered)) or
+            ("20k" in lowered and "headphone" not in lowered and "watch" not in lowered) or
+            ("22k" in lowered and "headphone" not in lowered and "watch" not in lowered)
+        )
+        if is_phone_query:
             phone_items = [p.id for p in products if p.category == "Smartphones"]
             primary_id = phone_items[0] if phone_items else None
             if add_intent and primary_id:
@@ -490,69 +518,44 @@ class BuyerAgent:
                 "guardrail_status": "PASSED"
             })
 
-        # Product search / specific queries
-        matched_prods = []
-        for p in products:
-            if any(k in lowered for k in [p.name.lower(), p.category.lower(), p.id.lower()]):
-                matched_prods.append(p.id)
-
-        if "headphone" in lowered or "audio" in lowered or "anc" in lowered:
-            audio_items = [p.id for p in products if p.category == "Audio"]
-            primary_id = audio_items[0] if audio_items else None
-            if add_intent and primary_id:
-                return _finalize({
-                    "reply": "You got it! I've added the Aura Pro ANC Headphones (₹7,999) to your cart! You're going to love the 42dB noise cancellation and punchy sound. Ready to checkout, or looking for something else?",
-                    "voice_summary": "You got it! The Aura Pro ANC Headphones are in your cart for ₹7,999. Ready to checkout?",
-                    "action": "ADD_TO_CART",
-                    "action_payload": {"product_id": primary_id, "product_ids": audio_items},
-                    "reasoning": "Detected add-to-cart intent for Audio category. Added flagship Aura Pro ANC.",
-                    "guardrail_status": "PASSED"
-                })
-            return _finalize({
-                "reply": "If you love immersive sound, you'll adore our flagship Aura Pro ANC Headphones at ₹7,999 (MRP ₹12,999). They pack 42dB active noise cancellation to silence background chatter and custom beryllium drivers for deep, punchy bass with 38 hours of playtime. Shall I pop them into your cart?",
-                "voice_summary": "Our flagship Aura Pro ANC Headphones are fantastic! 42dB noise cancellation and punchy bass for ₹7,999. Shall I add them to your cart?",
-                "action": "SHOW_PRODUCTS",
-                "action_payload": {"product_ids": audio_items, "product_id": primary_id},
-                "reasoning": "Queried Audio category. Recommended Aura Pro ANC with consultative tone.",
-                "guardrail_status": "PASSED"
-            })
-
-        if "watch" in lowered or "wearable" in lowered:
+        # Wearables / Smartwatches
+        if any(w in lowered for w in ["watch", "watches", "smartwatch", "smartwatches", "wearable", "wearables", "chrono", "fitness"]):
             wearables = [p.id for p in products if p.category == "Wearables"]
             primary_id = wearables[0] if wearables else None
             if add_intent and primary_id:
                 return _finalize({
-                    "reply": "Added the Nova Chrono Titanium Smartwatch (₹14,999) to your cart! It looks stunning and pairs beautifully with our magnetic wireless dock.",
-                    "voice_summary": "Added the Nova Chrono Titanium Smartwatch to your cart! Ready to checkout?",
+                    "reply": "Arre waah! Maine Nova Chrono Titanium Smartwatch (₹14,999) aapke cart me daal diya hai! Isme sapphire crystal aur aerospace titanium bezel milta hai." if is_hi else "Added the Nova Chrono Titanium Smartwatch (₹14,999) to your cart! It looks stunning and pairs beautifully with our magnetic wireless dock.",
+                    "voice_summary": "Nova Chrono Titanium Smartwatch aapke cart me add ho gaya hai!" if is_hi else "Added the Nova Chrono Titanium Smartwatch to your cart! Ready to checkout?",
                     "action": "ADD_TO_CART",
                     "action_payload": {"product_id": primary_id, "product_ids": wearables},
                     "reasoning": "Detected add-to-cart intent for Wearables. Added Nova Chrono Smartwatch.",
                     "guardrail_status": "PASSED"
                 })
             return _finalize({
-                "reply": "The Nova Chrono Smartwatch is a real showstopper with its sapphire crystal display, aerospace titanium bezel, and surgical health tracking for ₹14,999. It pairs great with our magnetic charging dock! Would you like me to add it to your cart?",
-                "voice_summary": "The Nova Chrono Smartwatch looks incredible with its titanium bezel and sapphire display at ₹14,999. Want me to add it to your cart?",
+                "reply": "Nova Chrono Smartwatch ek shaandar piece hai jisme sapphire crystal display, aerospace grade titanium bezel, aur clinical grade health sensors milte hain sirf ₹14,999 me! Kya ise aapke cart me add kar doon?" if is_hi else "The Nova Chrono Smartwatch is a real showstopper with its sapphire crystal display, aerospace titanium bezel, and surgical health tracking for ₹14,999. It pairs great with our magnetic charging dock! Would you like me to add it to your cart?",
+                "voice_summary": "Nova Chrono Smartwatch titanium bezel aur sapphire display ke saath sirf ₹14,999 me available hai!" if is_hi else "The Nova Chrono Smartwatch looks incredible with its titanium bezel and sapphire display at ₹14,999. Want me to add it to your cart?",
                 "action": "SHOW_PRODUCTS",
                 "action_payload": {"product_ids": wearables, "product_id": primary_id},
                 "reasoning": "Queried Wearables category. Showcased Nova Chrono Smartwatch with consultative tone.",
                 "guardrail_status": "PASSED"
             })
 
-        if "power" in lowered or "charge" in lowered or "dock" in lowered:
-            power_items = [p.id for p in products if p.category == "Power"]
+        # Power / Charging / Accessories
+        if any(w in lowered for w in ["power", "charge", "charger", "chargers", "charging", "dock", "gan", "cable", "accessories", "bundle"]):
+            power_items = [p.id for p in products if p.category == "Power" or p.category == "Accessories"]
             primary_id = power_items[0] if power_items else None
             if add_intent and primary_id:
                 return _finalize({
-                    "reply": "Added the fast charger to your cart! We have the 65W GaN Charger (₹2,499) and 3-in-1 Magnetic Dock (₹3,999) ready to power your devices.",
-                    "voice_summary": "Fast charger added to your cart! Ready for checkout?",
+                    "reply": "Fast charger aapke cart me add ho gaya hai! Hamare paas 65W GaN Charger (₹2,499) aur 3-in-1 Magnetic Dock (₹3,499) available hain." if is_hi else "Added the fast charger to your cart! We have the 65W GaN Charger (₹2,499) and 3-in-1 Magnetic Dock (₹3,499) ready to power your devices.",
+                    "voice_summary": "Fast charger aapke cart me add ho gaya hai!" if is_hi else "Fast charger added to your cart! Ready for checkout?",
                     "action": "ADD_TO_CART",
                     "action_payload": {"product_id": primary_id, "product_ids": power_items},
                     "reasoning": "Detected add-to-cart intent for Power. Added fast charger.",
                     "guardrail_status": "PASSED"
                 })
             return _finalize({
-                "reply": "Never get caught with a low battery! We have our ultra-compact 65W GaN Fast Charger for ₹2,499 and our 3-in-1 Magnetic Wireless Charging Dock for ₹3,999. Which one fits your setup best?",
-                "voice_summary": "We have the compact 65W GaN charger for ₹2,499 and the 3-in-1 magnetic dock for ₹3,999. Which one fits your setup best?",
+                "reply": "Aapke devices ko hamesha charged rakhne ke liye hamara ultra-compact **65W GaN Fast Charger** sirf ₹2,499 me aur hamara **Aura MagCharge 3-in-1 Dock** sirf ₹3,499 me available hai! Dono hi fast charging support karte hain. Kaunsa wala aapke setup ke liye best rahega?" if is_hi else "Never get caught with a low battery! We have our ultra-compact 65W GaN Fast Charger for ₹2,499 and our 3-in-1 Magnetic Wireless Charging Dock for ₹3,499. Which one fits your setup best?",
+                "voice_summary": "Hamare paas 65W GaN charger ₹2,499 me aur 3-in-1 dock ₹3,499 me available hain!" if is_hi else "We have the compact 65W GaN charger for ₹2,499 and the 3-in-1 magnetic dock for ₹3,499. Which one fits your setup best?",
                 "action": "SHOW_PRODUCTS",
                 "action_payload": {"product_ids": power_items, "product_id": primary_id},
                 "reasoning": "Queried Power category. Consultative charging recommendations.",
