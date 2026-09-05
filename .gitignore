@@ -19,5 +19,7 @@ backend/venv/
 node_modules/
 frontend/dist/
 
-# OS
+# OS & IDE
 .DS_Store
+.claude/
+
