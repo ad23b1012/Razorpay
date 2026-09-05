@@ -14,24 +14,35 @@ from app.agent.gemini_service import gemini_service
 logger = logging.getLogger("razoragent.buyer_agent")
 
 BUYER_SYSTEM_PROMPT = """
-You are Aura, the premier AI Shopping Concierge and Autonomous Commerce Agent for 'Aura Tech Store', powered by Razorpay.
-You interact with users with the genuine warmth, emotional intelligence, consultative expertise, and engaging charm of Gemini Live or ChatGPT Voice mode.
+You are Aura, an intelligent AI Shopping Concierge and Autonomous Commerce Agent for our electronics store, powered by Razorpay.
+You interact with shoppers with the genuine conversational warmth, emotional intelligence, and consultative expertise of Gemini Live or ChatGPT Voice mode.
 
-CONVERSATIONAL PERSONA & SPEAKING STYLE:
-1. Speak naturally, warmly, and enthusiastically—like an expert tech friend who genuinely wants to help the shopper find the perfect device.
-2. NEVER regurgitate dry spec lists, raw bullet points, or cold numbers!
-   - BAD: "The Nexus Neo 5G Smartphone features a 6.7-inch 120Hz AMOLED display, Snapdragon 7s Gen 2, 50MP Sony OIS camera, and 5000mAh battery with 68W charging for just ₹18,999 (MRP ₹24,999). Would you like to add it to your cart?"
-   - GOOD: "Awesome, you're looking for a solid daily driver under 20k! You're in luck—the Nexus Neo 5G is our absolute standout at ₹18,999. It rocks a buttery-smooth 120Hz AMOLED display, a snappy Snapdragon chip that flies through multitasking, and a beefy 5000mAh battery that'll easily get you through the day. Plus, with your remaining budget, I can pair it with our 65W GaN fast charger for an extra bundle discount. Would you like me to pop the Nexus Neo into your cart, or are you curious about the cameras?"
-3. Be consultative, curious, and interactive:
-   - Ask thoughtful follow-ups (e.g., "Are you mostly using it for gaming, photography, or daily work?").
-   - Acknowledge the user's intent with warm affirmations ("Great taste!", "You got it!", "I've got just the thing for you!").
-4. Proactive Dealmaking & Autonomous Protocols:
-   - If the shopper asks for a deal or discount, evaluate unit economics warmly: "I can unlock our exclusive 10% agentic welcome discount for you right now!" (action: "APPLY_DISCOUNT", payload: {"discount_pct": 10.0}).
-   - When the shopper says "add this", "add it", "put it in cart", "yes please", or "get this one", immediately recognize the discussed item from context, set action: "ADD_TO_CART", and reply with excitement!
-   - When the user asks to checkout or buy, set action: "TRIGGER_CHECKOUT" and guide them smoothly to Razorpay.
-5. Voice Summary:
-   - Provide a natural, concise 1-2 sentence `voice_summary` that flows effortlessly through text-to-speech with natural conversational rhythm and emotional warmth.
+CRITICAL INSTRUCTIONS FOR PRODUCT SEARCH & RECOMMENDATION:
+1. DYNAMIC CATALOG SEARCH & MATCHING:
+   - Always carefully inspect the provided live `Catalog` JSON for the user's specific request.
+   - Filter and match items strictly based on the user's explicit criteria:
+     * Category match: If the user asks for headphones, audio, or ANC, ONLY recommend items from the Audio category! Never recommend a phone or watch for an audio query.
+     * Budget match: If the user specifies a budget (e.g. "under ₹8,000" or "under 20k"), match items whose price falls within that budget.
+     * Feature match: Highlight specific features the user cares about (ANC, battery life, display, fast charging, water resistance, etc.).
+   - If the user asks for a product category (e.g. "headphones", "phone", "watch", "charger"), you MUST select that exact category from the catalog.
+
+2. CONVERSATIONAL & CONSULTATIVE STYLE:
+   - Speak naturally, warmly, and enthusiastically—like an expert tech friend.
+   - Talk about the product's real benefits and features dynamically using the data from the catalog. Do not read dry bullet lists.
+   - Match the shopper's language: If the shopper writes in Hindi or Hinglish, reply in natural conversational Hinglish. If in English, reply in English.
+   - When recommending an item, set action: "SHOW_PRODUCTS", with action_payload: {"product_ids": [matched_product_id], "product_id": matched_product_id}.
+
+3. ACTIONS & INTENTS:
+   - "SHOW_PRODUCTS": When the user is searching, browsing, or asking for recommendations.
+   - "ADD_TO_CART": When the user asks to add an item to their cart ("add this", "add to cart", "put it in cart", "yes add it"). Identify the discussed item from context and set product_id.
+   - "APPLY_DISCOUNT": When the user asks for a discount/deal/coupon. Offer a bounded promotional discount (up to 10-12%).
+   - "TRIGGER_CHECKOUT": When the user expresses intent to buy, pay, or checkout ("checkout", "proceed to pay", "buy now").
+   - "NONE": For general chit-chat, greetings, or questions not involving a direct UI action.
+
+4. VOICE SUMMARY:
+   - Provide a natural, concise 1-2 sentence voice_summary suitable for text-to-speech.
 """
+
 
 ALLOWED_CHAT_ACTIONS = {
     "SHOW_PRODUCTS", "ADD_TO_CART", "APPLY_DISCOUNT", "TRIGGER_CHECKOUT", "NONE",
@@ -467,110 +478,121 @@ class BuyerAgent:
         # Explicit add-to-cart intent (e.g. "add headphones to cart", "add the charger")
         add_intent = any(w in lowered for w in ["add to cart", "add the", "add it", "add this", "i want", "i'll take", "get me", "cart me", "daal do", "daalo", "add kardo", "kardo", "le lo"])
 
-        # Audio / Headphones / Earphones (Evaluated BEFORE phones so "headphones" never matches "phone")
-        if any(w in lowered for w in ["headphone", "headphones", "earphone", "earphones", "audio", "anc", "tws", "earbud", "earbuds", "noise cancel", "noise cancellation"]):
-            audio_items = [p.id for p in products if p.category == "Audio"]
-            primary_id = audio_items[0] if audio_items else None
-            if add_intent and primary_id:
-                return _finalize({
-                    "reply": "Arre waah! Maine Aura Pro Wireless ANC Headphones (₹7,999) aapke cart me daal diya hai! Isme 42dB noise cancellation aur 38 hours ka battery backup milta hai. Ready to checkout?" if is_hi else "You got it! I've added the Aura Pro ANC Headphones (₹7,999) to your cart! You're going to love the 42dB noise cancellation and punchy sound. Ready to checkout, or looking for something else?",
-                    "voice_summary": "Aura Pro ANC Headphones aapke cart me add ho gaye hain!" if is_hi else "You got it! The Aura Pro ANC Headphones are in your cart for ₹7,999. Ready to checkout?",
-                    "action": "ADD_TO_CART",
-                    "action_payload": {"product_id": primary_id, "product_ids": audio_items},
-                    "reasoning": "Detected add-to-cart intent for Audio category. Added flagship Aura Pro ANC.",
-                    "guardrail_status": "PASSED"
-                })
+        # 4c. Extract budget constraint if mentioned (e.g. "under 8000", "under 20k", "below 15000", "8k", "20 hazaar")
+        budget_limit = None
+        budget_match = re.search(r"(?:under|below|budget|within|upto|less than|ke andar|tak|andar)\s*(?:₹|rs\.?|inr)?\s*(\d+)(k|000|hazaar|hazar)?", lowered)
+        if budget_match:
+            val = float(budget_match.group(1))
+            mult = (budget_match.group(2) or "").lower()
+            if mult in ["k", "hazaar", "hazar"] or (val <= 100 and mult != "000"):
+                val = val * 1000
+            budget_limit = val
+
+        # 4d. Dynamic Semantic Scoring across Database Products
+        scored_products = []
+        for p in products:
+            score = 0
+            p_name = p.name.lower()
+            p_cat = p.category.lower()
+            p_desc = (p.description or "").lower()
+            specs_str = json.dumps(p.agent_readable_specs or {}).lower()
+            p_full_text = f"{p_name} {p_cat} {p_desc} {specs_str}"
+
+            # Category matching
+            if any(w in lowered for w in ["headphone", "headphones", "audio", "anc", "earphone", "earphones", "earbud", "earbuds", "tws", "sound", "music"]):
+                if p.category == "Audio":
+                    score += 60
+                else:
+                    score -= 40
+            elif any(w in lowered for w in ["watch", "watches", "smartwatch", "smartwatches", "wearable", "wearables", "fitness", "chrono"]):
+                if p.category == "Wearables":
+                    score += 60
+                else:
+                    score -= 40
+            elif any(w in lowered for w in ["charger", "chargers", "charge", "charging", "dock", "gan", "adapter", "cable", "power", "battery"]):
+                if p.category in ["Power", "Accessories"]:
+                    score += 60
+                else:
+                    score -= 40
+            elif any(w in lowered for w in ["mobile", "smartphone", "smartphones", "nexus", "android"]) or bool(re.search(r"\bphones?\b", lowered)):
+                if p.category == "Smartphones":
+                    score += 60
+                else:
+                    score -= 40
+
+            # Exact keyword hits from user query
+            query_words = [w for w in re.findall(r"\w+", lowered) if len(w) > 2 and w not in ["the", "and", "for", "with", "find", "get", "show", "under", "below", "best", "give"]]
+            for qw in query_words:
+                if qw in p_name:
+                    score += 25
+                elif qw in p_full_text:
+                    score += 10
+
+            # Budget check
+            if budget_limit:
+                if p.price_inr <= budget_limit:
+                    score += 30
+                    # Closeness to budget (reward getting closest to budget without exceeding)
+                    closeness = (p.price_inr / budget_limit) * 10
+                    score += closeness
+                else:
+                    score -= 50  # Over budget
+
+            if score > 0:
+                scored_products.append((score, p))
+
+        scored_products.sort(key=lambda x: x[0], reverse=True)
+        top_matches = [p for _, p in scored_products]
+
+        # 4e. Handle Add-To-Cart Intent dynamically
+        if add_intent and top_matches:
+            target = top_matches[0]
             return _finalize({
-                "reply": "Agar aapko shaandar sound aur shanti chahiye, toh hamare flagship **Aura Pro ANC Headphones** sirf ₹7,999 (MRP ₹12,999) me aapke budget me bilkul fit baithte hain! Inme 42dB Active Noise Cancellation hai jo saara shor gayab kar deta hai, custom beryllium drivers se jabardast bass, aur 38 ghante ki battery life. Kya inhe aapke cart me add kar doon?" if is_hi else "If you love immersive sound, you'll adore our flagship Aura Pro ANC Headphones at ₹7,999 (MRP ₹12,999). They pack 42dB active noise cancellation to silence background chatter and custom beryllium drivers for deep, punchy bass with 38 hours of playtime. Shall I pop them into your cart?",
-                "voice_summary": "Hamare flagship Aura Pro ANC Headphones sirf ₹7,999 me available hain with 42dB noise cancellation! Kya inhe cart me add kar doon?" if is_hi else "Our flagship Aura Pro ANC Headphones are fantastic! 42dB noise cancellation and punchy bass for ₹7,999. Shall I add them to your cart?",
-                "action": "SHOW_PRODUCTS",
-                "action_payload": {"product_ids": audio_items, "product_id": primary_id},
-                "reasoning": "Queried Audio category. Recommended Aura Pro ANC with consultative tone.",
+                "reply": f"Arre waah! Maine {target.name} (₹{target.price_inr:,.0f}) aapke cart me add kar diya hai! Kya aur kuch dekhna hai ya checkout karein?" if is_hi else f"Great choice! I've added the {target.name} (₹{target.price_inr:,.0f}) to your cart! Would you like to proceed to checkout or look at anything else?",
+                "voice_summary": f"{target.name} aapke cart me add ho gaya hai!" if is_hi else f"I've added {target.name} to your cart for ₹{target.price_inr:,.0f}. Ready for checkout?",
+                "action": "ADD_TO_CART",
+                "action_payload": {"product_id": target.id, "product_ids": [target.id]},
+                "reasoning": f"Matched intent to add '{target.name}' to cart dynamically from database.",
                 "guardrail_status": "PASSED"
             })
 
-        # Smartphone / mobile specific queries (word boundary so "headphone" or "earphone" never matches)
-        is_phone_query = (
-            any(w in lowered for w in ["mobile", "smartphone", "smartphones", "nexus"]) or
-            bool(re.search(r"\bphones?\b", lowered)) or
-            ("20k" in lowered and "headphone" not in lowered and "watch" not in lowered) or
-            ("22k" in lowered and "headphone" not in lowered and "watch" not in lowered)
-        )
-        if is_phone_query:
-            phone_items = [p.id for p in products if p.category == "Smartphones"]
-            primary_id = phone_items[0] if phone_items else None
-            if add_intent and primary_id:
-                target_p = next(p for p in products if p.id == primary_id)
-                return _finalize({
-                    "reply": f"Arre waah! Maine {target_p.name} (₹{target_p.price_inr:,.0f}) aapke cart me daal diya hai! Isme 120Hz AMOLED screen aur 68W TurboCharge fast charging milti hai. Kya iske saath 65W fast charger ya protective case bhi add kar doon?" if is_hi else f"Awesome! I've popped the {target_p.name} (₹{target_p.price_inr:,.0f}) right into your cart! It features a stunning 120Hz AMOLED display and snappy 68W fast charging. Would you like me to add a high-speed GaN charger or protective case as well?",
-                    "voice_summary": f"{target_p.name} aapke cart me add ho gaya hai! Kya fast charger bhi saath me add karein?" if is_hi else f"Awesome! I've added the {target_p.name} to your cart for ₹{target_p.price_inr:,.0f}. Shall I pair it with a fast charger?",
-                    "action": "ADD_TO_CART",
-                    "action_payload": {"product_id": primary_id, "product_ids": phone_items},
-                    "reasoning": "Detected add-to-cart intent for Smartphones. Added Nexus Neo 5G to cart with conversational warmth.",
-                    "guardrail_status": "PASSED"
-                })
+        # 4f. Handle Product Recommendation dynamically
+        if top_matches:
+            primary = top_matches[0]
+            matched_ids = [p.id for p in top_matches[:3]]
+            
+            # Extract key highlight from description or specs
+            highlight = primary.description or ""
+            if len(highlight) > 180:
+                highlight = highlight[:177] + "..."
+
+            if is_hi:
+                reply = f"Aapke criteria ke hisaab se hamara **{primary.name}** sabse shaandar choice hai sirf ₹{primary.price_inr:,.0f} me (MRP ₹{primary.mrp_inr:,.0f})! {highlight} Kya ise aapke cart me add kar doon?"
+                voice_summary = f"Aapke budget me {primary.name} sirf ₹{primary.price_inr:,.0f} me best option hai! Kya ise cart me add karein?"
+            else:
+                reply = f"Based on what you're looking for, the **{primary.name}** is an absolute standout at ₹{primary.price_inr:,.0f} (MRP ₹{primary.mrp_inr:,.0f})! {highlight} Would you like me to pop it into your cart, or tell you more about it?"
+                voice_summary = f"The {primary.name} is a fantastic match at ₹{primary.price_inr:,.0f}. Shall I add it to your cart?"
+
             return _finalize({
-                "reply": "Arre waah! 20-22 hazaar ke budget me hamara superstar **Nexus Neo 5G** sabse zabardast phone hai sirf ₹18,999 me! Isme buttery-smooth 120Hz AMOLED display, tez Snapdragon processor, aur 50MP Sony OIS camera milta hai jo shaandar photos leta hai. Aapke budget me ₹1,000 se zyada bachte bhi hain! Kya ise aapke cart me daal doon ya camera ke baare me bataun?" if is_hi else "Awesome, you're looking for a solid phone under 20-22k! You're in luck—the Nexus Neo 5G is our absolute standout at ₹18,999. It rocks a buttery-smooth 120Hz AMOLED display, a snappy Snapdragon chip that flies through multitasking, and a beefy 5000mAh battery that easily lasts all day. Plus, with your remaining budget, I can pair it with our 65W fast charger for a special bundle deal! Would you like me to pop the Nexus Neo into your cart, or tell you more about the camera?",
-                "voice_summary": "20-22 hazaar ke budget me Nexus Neo 5G ₹18,999 me sabse best option hai! Kya ise aapke cart me add kar doon?" if is_hi else "Awesome choice! For under 22k, the Nexus Neo 5G is our standout pick at ₹18,999 with a silky 120Hz display and all-day battery. Would you like me to add it to your cart?",
+                "reply": reply,
+                "voice_summary": voice_summary,
                 "action": "SHOW_PRODUCTS",
-                "action_payload": {"product_ids": phone_items, "product_id": primary_id},
-                "reasoning": "Recommended Nexus Neo 5G under budget with conversational consultative guidance in " + ("Hindi/Hinglish." if is_hi else "English."),
+                "action_payload": {"product_ids": matched_ids, "product_id": primary.id},
+                "reasoning": f"Dynamically matched database product '{primary.name}' (Category: {primary.category}, Price: ₹{primary.price_inr:,.0f}) against user criteria.",
                 "guardrail_status": "PASSED"
             })
 
-        # Wearables / Smartwatches
-        if any(w in lowered for w in ["watch", "watches", "smartwatch", "smartwatches", "wearable", "wearables", "chrono", "fitness"]):
-            wearables = [p.id for p in products if p.category == "Wearables"]
-            primary_id = wearables[0] if wearables else None
-            if add_intent and primary_id:
-                return _finalize({
-                    "reply": "Arre waah! Maine Nova Chrono Titanium Smartwatch (₹14,999) aapke cart me daal diya hai! Isme sapphire crystal aur aerospace titanium bezel milta hai." if is_hi else "Added the Nova Chrono Titanium Smartwatch (₹14,999) to your cart! It looks stunning and pairs beautifully with our magnetic wireless dock.",
-                    "voice_summary": "Nova Chrono Titanium Smartwatch aapke cart me add ho gaya hai!" if is_hi else "Added the Nova Chrono Titanium Smartwatch to your cart! Ready to checkout?",
-                    "action": "ADD_TO_CART",
-                    "action_payload": {"product_id": primary_id, "product_ids": wearables},
-                    "reasoning": "Detected add-to-cart intent for Wearables. Added Nova Chrono Smartwatch.",
-                    "guardrail_status": "PASSED"
-                })
-            return _finalize({
-                "reply": "Nova Chrono Smartwatch ek shaandar piece hai jisme sapphire crystal display, aerospace grade titanium bezel, aur clinical grade health sensors milte hain sirf ₹14,999 me! Kya ise aapke cart me add kar doon?" if is_hi else "The Nova Chrono Smartwatch is a real showstopper with its sapphire crystal display, aerospace titanium bezel, and surgical health tracking for ₹14,999. It pairs great with our magnetic charging dock! Would you like me to add it to your cart?",
-                "voice_summary": "Nova Chrono Smartwatch titanium bezel aur sapphire display ke saath sirf ₹14,999 me available hai!" if is_hi else "The Nova Chrono Smartwatch looks incredible with its titanium bezel and sapphire display at ₹14,999. Want me to add it to your cart?",
-                "action": "SHOW_PRODUCTS",
-                "action_payload": {"product_ids": wearables, "product_id": primary_id},
-                "reasoning": "Queried Wearables category. Showcased Nova Chrono Smartwatch with consultative tone.",
-                "guardrail_status": "PASSED"
-            })
-
-        # Power / Charging / Accessories
-        if any(w in lowered for w in ["power", "charge", "charger", "chargers", "charging", "dock", "gan", "cable", "accessories", "bundle"]):
-            power_items = [p.id for p in products if p.category == "Power" or p.category == "Accessories"]
-            primary_id = power_items[0] if power_items else None
-            if add_intent and primary_id:
-                return _finalize({
-                    "reply": "Fast charger aapke cart me add ho gaya hai! Hamare paas 65W GaN Charger (₹2,499) aur 3-in-1 Magnetic Dock (₹3,499) available hain." if is_hi else "Added the fast charger to your cart! We have the 65W GaN Charger (₹2,499) and 3-in-1 Magnetic Dock (₹3,499) ready to power your devices.",
-                    "voice_summary": "Fast charger aapke cart me add ho gaya hai!" if is_hi else "Fast charger added to your cart! Ready for checkout?",
-                    "action": "ADD_TO_CART",
-                    "action_payload": {"product_id": primary_id, "product_ids": power_items},
-                    "reasoning": "Detected add-to-cart intent for Power. Added fast charger.",
-                    "guardrail_status": "PASSED"
-                })
-            return _finalize({
-                "reply": "Aapke devices ko hamesha charged rakhne ke liye hamara ultra-compact **65W GaN Fast Charger** sirf ₹2,499 me aur hamara **Aura MagCharge 3-in-1 Dock** sirf ₹3,499 me available hai! Dono hi fast charging support karte hain. Kaunsa wala aapke setup ke liye best rahega?" if is_hi else "Never get caught with a low battery! We have our ultra-compact 65W GaN Fast Charger for ₹2,499 and our 3-in-1 Magnetic Wireless Charging Dock for ₹3,499. Which one fits your setup best?",
-                "voice_summary": "Hamare paas 65W GaN charger ₹2,499 me aur 3-in-1 dock ₹3,499 me available hain!" if is_hi else "We have the compact 65W GaN charger for ₹2,499 and the 3-in-1 magnetic dock for ₹3,499. Which one fits your setup best?",
-                "action": "SHOW_PRODUCTS",
-                "action_payload": {"product_ids": power_items, "product_id": primary_id},
-                "reasoning": "Queried Power category. Consultative charging recommendations.",
-                "guardrail_status": "PASSED"
-            })
-
-        # Default helpful assistant response
+        # 4g. General Catalog Discovery fallback
+        trending = products[:4]
         return _finalize({
-            "reply": "Hey there! I'm Aura, your AI shopping advisor. Whether you're looking for flagship smartphones, noise-cancelling headphones, or high-speed GaN chargers, I can help you find the best tech and unlock exclusive bundle discounts. What can I help you find today?",
-            "voice_summary": "Hey there! I'm Aura, your AI shopping advisor. Tell me what you're looking for today!",
+            "reply": "Main Aura hoon, aapki AI shopping concierge. Main hamare live store me se best tech jaise smartphones, wireless headphones, smartwatches aur fast chargers dhoondne me aapki madad kar sakti hoon. Batayiye aaj aap kya dhoond rahe hain?" if is_hi else "Hi! I'm Aura, your AI shopping concierge. I can search our live database for the best smartphones, audio gear, smartwatches, and fast chargers, and unlock exclusive bundle discounts. What can I help you find today?",
+            "voice_summary": "Batayiye aaj aap kya dhoond rahe hain aur main live catalog me se best options dikha dungi!" if is_hi else "Tell me what you're looking for and I'll find the best options from our catalog!",
             "action": "SHOW_PRODUCTS",
-            "action_payload": {"product_ids": [p.id for p in products[:4]], "product_id": products[0].id if products else None},
-            "reasoning": "Default greeting. Surfaced top 4 trending catalog products.",
+            "action_payload": {"product_ids": [p.id for p in trending], "product_id": trending[0].id if trending else None},
+            "reasoning": "No specific product matched criteria; dynamically surfaced trending catalog items.",
             "guardrail_status": "PASSED"
         })
+
 
     async def negotiate_a2a_protocol(
         self,
