@@ -16,4 +16,4 @@ EXPOSE 8000
 # One worker by default. The SQLite fallback is a single file and the audit
 # chain serialises its writes, so four workers would contend for both. Raise
 # this only when SUPABASE_DATABASE_URL points at Postgres.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
